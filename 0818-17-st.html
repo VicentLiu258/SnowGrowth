@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Snow Growth Tools</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'system-ui', 'sans-serif'] },
+                    colors: { emerald: { 50: '#ecfdf5', 100: '#d1fae5', 500: '#10b981', 600: '#059669', 700: '#047857' } }
+                }
+            }
+        }
+    </script>
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body { -webkit-tap-highlight-color: transparent; }
+        .glass-nav { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(12px); border-top: 1px solid rgba(0,0,0,0.05); }
+        input[type=range] { accent-color: #059669; }
+        .text-balance { text-wrap: balance; }
+        .smooth-shadow { box-shadow: 0 8px 30px rgba(0, 0, 0, 0.04); }
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 antialiased selection:bg-emerald-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useCallback } = React;
+
+        // --- Custom Hooks ---
+        const useLocalStorage = (key, initialValue) => {
+            const [storedValue, setStoredValue] = useState(() => {
+                try {
+                    const item = window.localStorage.getItem(key);
+                    return item ? JSON.parse(item) : initialValue;
+                } catch (error) {
+                    console.error("Local storage error:", error);
+                    return initialValue;
+                }
+            });
+
+            const setValue = useCallback((value) => {
+                setStoredValue(prev => {
+                    const valueToStore = typeof value === 'function' ? value(prev) : value;
+                    try {
+                        window.localStorage.setItem(key, JSON.stringify(valueToStore));
+                    } catch (error) {
+                        console.error("Local storage error:", error);
+                    }
+                    return valueToStore;
+                });
+            }, [key]);
+
+            return [storedValue, setValue];
+        };
+
+        const exportToolData = (data, filename) => {
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        };
+
+        // --- Core UI Components ---
+
+        const Logo = ({ className = "h-8 w-auto" }) => (
+            <div className={`relative inline-flex items-center ${className}`}>
+                <img 
+                    src="logo.svg" 
+                    alt="Logo" 
+                    className="h-full w-auto object-contain object-left"
+                    onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} 
+                />
+                <span style={{display: 'none'}} className="text-xl font-bold tracking-tight text-gray-900">Snow<span className="text-emerald-600">Growth</span></span>
+            </div>
+        );
+
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (ref.current && window.lucide) {
+                    ref.current.innerHTML = `<i data-lucide="${name}"></i>`;
+                    window.lucide.createIcons({ root: ref.current });
+                    const svg = ref.current.querySelector('svg');
+                    if (svg) {
+                        svg.setAttribute('width', size);
+                        svg.setAttribute('height', size);
+                        if (className) svg.setAttribute('class', className);
+                    }
+                }
+            }, [name, size, className]);
+            return <span ref={ref} className="inline-flex items-center justify-center"></span>;
+        };
+
+        const Button = ({ children, onClick, variant = 'primary', className = '' }) => {
+            const base = "inline-flex items-center justify-center font-medium transition-all duration-300 rounded-xl outline-none";
+            const variants = {
+                primary: "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg hover:shadow-emerald-600/20 px-6 py-3.5",
+                secondary: "bg-white text-gray-700 hover:bg-gray-50 shadow-sm border border-gray-200 px-6 py-3.5",
+                ghost: "text-gray-500 hover:text-gray-900 hover:bg-gray-100 p-2"
+            };
+            return <button onClick={onClick} className={`${base} ${variants[variant]} ${className}`}>{children}</button>;
+        };
+
+        const Card = ({ children, className = '', onClick }) => (
+            <div onClick={onClick} className={`bg-white rounded-2xl smooth-shadow transition-all duration-300 ${onClick ? 'cursor-pointer hover:shadow-md hover:-translate-y-1' : ''} ${className}`}>
+                {children}
+            </div>
+        );
+
+        const Input = ({ label, value, onChange, type = "text", prefix }) => (
+            <div className="flex flex-col gap-2 w-full">
+                {label && <label className="text-sm font-medium text-gray-500">{label}</label>}
+                <div className="relative">
+                    {prefix && <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500 font-medium">{prefix}</div>}
+                    <input 
+                        type={type} inputMode="decimal" value={value} onChange={onChange}
+                        className={`w-full bg-white border border-gray-200 text-gray-900 font-medium rounded-xl py-3.5 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all outline-none ${prefix ? 'pl-8' : 'pl-4'}`}
+                    />
+                </div>
+            </div>
+        );
+
+        const ToolMenu = ({ onClear, onExport }) => {
+            const [isOpen, setIsOpen] = useState(false);
+            const menuRef = useRef(null);
+
+            useEffect(() => {
+                const handleClickOutside = (event) => {
+                    if (menuRef.current && !menuRef.current.contains(event.target)) setIsOpen(false);
+                };
+                document.addEventListener("mousedown", handleClickOutside);
+                return () => document.removeEventListener("mousedown", handleClickOutside);
+            }, []);
+
+            return (
+                <div className="relative" ref={menuRef}>
+                    <Button variant="ghost" onClick={() => setIsOpen(!isOpen)} className="!p-2 hover:bg-gray-100 rounded-full">
+                        <Icon name="more-vertical" size={20} />
+                    </Button>
+                    {isOpen && (
+                        <div className="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50 animate-fade-in">
+                            <button onClick={() => { onClear(); setIsOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 font-medium transition-colors flex items-center gap-2">
+                                <Icon name="trash-2" size={16} /> Clear Data
+                            </button>
+                            <button onClick={() => { onExport(); setIsOpen(false); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 font-medium transition-colors flex items-center gap-2">
+                                <Icon name="download" size={16} /> Export Data
+                            </button>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        // --- Feature Modules (Calculators) ---
+
+        const PercentageCalc = ({ navigate }) => {
+            const [mode, setMode] = useLocalStorage('pct_mode', 0); 
+            const [x, setX] = useLocalStorage('pct_x', '25');
+            const [y, setY] = useLocalStorage('pct_y', '200');
+
+            const vx = parseFloat(x);
+            const vy = parseFloat(y);
+            let result = '---';
+            let rawResult = null;
+
+            if (!isNaN(vx) && !isNaN(vy)) {
+                if (mode === 0) {
+                    rawResult = (vx / 100) * vy;
+                    result = `${vx}% of ${vy} = ${rawResult.toFixed(2).replace(/\.00$/, '')}`;
+                }
+                if (mode === 1) {
+                    if (vy === 0) {
+                        result = 'Error (Div by 0)';
+                    } else {
+                        rawResult = (vx / vy) * 100;
+                        result = `${vx} is ${rawResult.toFixed(2).replace(/\.00$/, '')}% of ${vy}`;
+                    }
+                }
+                if (mode === 2) {
+                    if (vx === 0) {
+                        result = 'Error (Div by 0)';
+                    } else {
+                        rawResult = ((vy - vx) / vx) * 100;
+                        result = `Change: ${rawResult > 0 ? '+' : ''}${rawResult.toFixed(2).replace(/\.00$/, '')}%`;
+                    }
+                }
+            }
+
+            const handleClear = () => {
+                localStorage.removeItem('pct_mode'); localStorage.removeItem('pct_x'); localStorage.removeItem('pct_y');
+                setMode(0); setX('25'); setY('200');
+            };
+
+            const handleExport = () => {
+                exportToolData({ tool: 'Percentage Calculator', mode, valueX: x, valueY: y, result: result }, 'percentage_data.json');
+            };
+
+            const modesList = [
+                { id: 0, label: 'What is X% of Y' },
+                { id: 1, label: 'X is what % of Y' },
+                { id: 2, label: '% Change from X to Y' }
+            ];
+
+            return (
+                <div className="animate-fade-in max-w-2xl mx-auto w-full pb-24">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={() => navigate('tools')}><Icon name="arrow-left" /></Button>
+                            <h2 className="text-2xl font-bold tracking-tight">Percentage</h2>
+                        </div>
+                        <ToolMenu onClear={handleClear} onExport={handleExport} />
+                    </div>
+                    
+                    <Card className="p-6 md:p-8 mb-6 border border-gray-100 bg-white/80 backdrop-blur-md">
+                        <div className="flex flex-col gap-8">
+                            
+                            <div className="flex flex-col gap-3">
+                                <label className="text-sm font-medium text-gray-500">Mode:</label>
+                                <div className="flex flex-col gap-4">
+                                    {modesList.map(opt => (
+                                        <label key={opt.id} className="flex items-center gap-3 cursor-pointer group">
+                                            <div className={`w-5 h-5 rounded-full border-2 flex flex-shrink-0 items-center justify-center transition-colors ${mode === opt.id ? 'border-emerald-500' : 'border-gray-300 group-hover:border-emerald-400'}`}>
+                                                {mode === opt.id && <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />}
+                                            </div>
+                                            <span className="text-gray-900 font-medium">{opt.label}</span>
+                                            <input type="radio" className="hidden" checked={mode === opt.id} onChange={() => setMode(opt.id)} />
+                                        </label>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-4">
+                                <Input label="Value X" value={x} onChange={e => setX(e.target.value)} />
+                                <Input label="Value Y" value={y} onChange={e => setY(e.target.value)} />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-8 bg-white border border-gray-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <span className="text-sm font-medium tracking-widest text-gray-400 uppercase mb-3">Result</span>
+                        <div className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 text-balance">{result}</div>
+                    </Card>
+                </div>
+            );
+        };
+
+        const UnitCalc = ({ navigate }) => {
+            const unitData = {
+                length: ['Meter', 'Kilometer', 'Centimeter', 'Millimeter', 'Mile', 'Yard', 'Foot', 'Inch'],
+                weight: ['Kilogram', 'Gram', 'Milligram', 'MetricTon', 'Pound', 'Ounce'],
+                temperature: ['Celsius', 'Fahrenheit', 'Kelvin'],
+                area: ['SqMeter', 'SqKilometer', 'Hectare', 'Acre', 'SqFoot'],
+                volume: ['Liter', 'Milliliter', 'CubicMeter', 'GallonUS'],
+                speed: ['MPS', 'KMPH', 'MPH', 'Knot'],
+                data: ['Byte', 'Kilobyte', 'Megabyte', 'Gigabyte', 'Terabyte']
+            };
+            
+            const rates = {
+                length: { Meter: 1, Kilometer: 1000, Centimeter: 0.01, Millimeter: 0.001, Mile: 1609.34, Yard: 0.9144, Foot: 0.3048, Inch: 0.0254 },
+                weight: { Kilogram: 1, Gram: 0.001, Milligram: 0.000001, MetricTon: 1000, Pound: 0.453592, Ounce: 0.0283495 },
+                area: { SqMeter: 1, SqKilometer: 1000000, Hectare: 10000, Acre: 4046.86, SqFoot: 0.092903 },
+                volume: { Liter: 1, Milliliter: 0.001, CubicMeter: 1000, GallonUS: 3.78541 },
+                speed: { MPS: 1, KMPH: 0.277778, MPH: 0.44704, Knot: 0.514444 },
+                data: { Byte: 1, Kilobyte: 1024, Megabyte: 1048576, Gigabyte: 1073741824, Terabyte: 1099511627776 }
+            };
+
+            const convertUnit = (val, from, to, c) => {
+                if (c === 'temperature') {
+                    let k;
+                    if (from === 'Celsius') k = val;
+                    else if (from === 'Fahrenheit') k = (val - 32) * 5/9;
+                    else if (from === 'Kelvin') k = val - 273.15;
+                    if (to === 'Celsius') return k;
+                    if (to === 'Fahrenheit') return (k * 9/5) + 32;
+                    if (to === 'Kelvin') return k + 273.15;
+                }
+                const r = rates[c];
+                if (!r || !r[from] || !r[to]) return val;
+                return (val * r[from]) / r[to];
+            };
+
+            const [cat, setCat] = useLocalStorage('unit_cat', 'length');
+            const [fromUnit, setFromUnit] = useLocalStorage('unit_from', 'Meter');
+            const [toUnit, setToUnit] = useLocalStorage('unit_to', 'Foot');
+            const [val1, setVal1] = useLocalStorage('unit_v1', '100');
+            const [val2, setVal2] = useLocalStorage('unit_v2', '328.08399');
+            const [lastEdited, setLastEdited] = useLocalStorage('unit_last_edit', 1);
+
+            const execV1 = (v, frm, t, c) => {
+                setVal1(v); setLastEdited(1);
+                const parsed = parseFloat(v);
+                if (!v || isNaN(parsed)) return setVal2('');
+                setVal2(Number(convertUnit(parsed, frm, t, c).toFixed(6)).toString());
+            };
+
+            const execV2 = (v, frm, t, c) => {
+                setVal2(v); setLastEdited(2);
+                const parsed = parseFloat(v);
+                if (!v || isNaN(parsed)) return setVal1('');
+                setVal1(Number(convertUnit(parsed, t, frm, c).toFixed(6)).toString());
+            };
+
+            const handleCatChange = (c) => {
+                setCat(c);
+                const nFrom = unitData[c][0];
+                const nTo = unitData[c][1] || unitData[c][0];
+                setFromUnit(nFrom); setToUnit(nTo);
+                if (lastEdited === 1) execV1(val1, nFrom, nTo, c);
+                else execV2(val2, nFrom, nTo, c);
+            };
+
+            const handleClear = () => {
+                ['unit_cat', 'unit_from', 'unit_to', 'unit_v1', 'unit_v2', 'unit_last_edit'].forEach(k => localStorage.removeItem(k));
+                setCat('length'); setFromUnit('Meter'); setToUnit('Foot'); setVal1('100'); setVal2('328.08399'); setLastEdited(1);
+            };
+
+            const handleExport = () => {
+                exportToolData({ tool: 'Unit Converter', category: cat, fromUnit, toUnit, value1: val1, value2: val2 }, 'unit_converter_data.json');
+            };
+
+            const UnitSelect = ({ value, onChange, options }) => (
+                <div className="relative w-full">
+                    <select value={value} onChange={onChange} className="w-full appearance-none bg-white border border-gray-200 text-gray-900 font-medium py-3.5 pl-4 pr-10 rounded-xl outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 cursor-pointer transition-all">
+                        {options.map(o => <option key={o} value={o}>{o}</option>)}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                        <Icon name="chevron-down" size={16} />
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="animate-fade-in max-w-2xl mx-auto w-full pb-24">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={() => navigate('tools')}><Icon name="arrow-left" /></Button>
+                            <h2 className="text-2xl font-bold tracking-tight">Unit Converter</h2>
+                        </div>
+                        <ToolMenu onClear={handleClear} onExport={handleExport} />
+                    </div>
+
+                    <div className="flex gap-3 overflow-x-auto pb-4 mb-4 hide-scroll snap-x">
+                        {Object.keys(unitData).map(c => (
+                            <button key={c} onClick={() => handleCatChange(c)} className={`snap-start px-5 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap ${cat === c ? 'bg-gray-900 text-white shadow-md' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'}`}>
+                                {c.charAt(0).toUpperCase() + c.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    <Card className="p-6 md:p-8 mb-6 border border-gray-100 bg-white/80 backdrop-blur-md">
+                        <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-4 md:gap-6 items-start relative z-10">
+                            <div className="flex flex-col gap-3">
+                                <label className="text-sm font-medium text-gray-500">From</label>
+                                <Input value={val1} onChange={e => execV1(e.target.value, fromUnit, toUnit, cat)} />
+                                <UnitSelect value={fromUnit} onChange={e => { setFromUnit(e.target.value); if(lastEdited===1) execV1(val1, e.target.value, toUnit, cat); else execV2(val2, e.target.value, toUnit, cat); }} options={unitData[cat]} />
+                            </div>
+                            
+                            <div className="hidden md:flex items-center justify-center pt-10">
+                                <div className="text-gray-400">
+                                    <Icon name="arrow-right-left" size={20} />
+                                </div>
+                            </div>
+
+                            <div className="flex flex-col gap-3 mt-2 md:mt-0">
+                                <label className="text-sm font-medium text-gray-500">To</label>
+                                <Input value={val2} onChange={e => execV2(e.target.value, fromUnit, toUnit, cat)} />
+                                <UnitSelect value={toUnit} onChange={e => { setToUnit(e.target.value); if(lastEdited===1) execV1(val1, fromUnit, e.target.value, cat); else execV2(val2, fromUnit, e.target.value, cat); }} options={unitData[cat]} />
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-8 bg-white border border-gray-100 flex flex-col items-center justify-center text-center shadow-sm">
+                        <div className="text-2xl font-bold tracking-tight text-gray-900 text-balance">
+                            {val1 || 0} {fromUnit} = {val2 || 0} {toUnit}
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        const TipCalc = ({ navigate }) => {
+            const [bill, setBill] = useLocalStorage('tip_bill', '85.00');
+            const [tipPct, setTipPct] = useLocalStorage('tip_pct', 15);
+            const [split, setSplit] = useLocalStorage('tip_split', 4);
+
+            const vBill = Math.max(0, parseFloat(bill) || 0);
+            const validSplit = Math.max(1, split);
+            const tipAmt = vBill * (tipPct / 100);
+            const total = vBill + tipAmt;
+            const perPerson = total / validSplit;
+
+            const handleClear = () => {
+                ['tip_bill', 'tip_pct', 'tip_split'].forEach(k => localStorage.removeItem(k));
+                setBill('85.00'); setTipPct(15); setSplit(4);
+            };
+
+            const handleExport = () => {
+                exportToolData({ tool: 'Tip Calculator', billAmount: vBill, tipPercentage: tipPct, splitBetween: validSplit, totalTip: tipAmt, totalBill: total, perPerson: perPerson }, 'tip_calculator_data.json');
+            };
+
+            return (
+                <div className="animate-fade-in max-w-2xl mx-auto w-full pb-24">
+                    <div className="flex items-center justify-between mb-6">
+                        <div className="flex items-center gap-4">
+                            <Button variant="ghost" onClick={() => navigate('tools')}><Icon name="arrow-left" /></Button>
+                            <h2 className="text-2xl font-bold tracking-tight">Tip Calculator</h2>
+                        </div>
+                        <ToolMenu onClear={handleClear} onExport={handleExport} />
+                    </div>
+
+                    <Card className="p-6 md:p-8 mb-6 flex flex-col gap-8 border border-gray-100 bg-white/80 backdrop-blur-md">
+                        <Input label="Bill Amount" prefix="$" value={bill} onChange={e => setBill(e.target.value)} />
+                        
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-between items-center">
+                                <label className="text-sm font-medium text-gray-500">Tip %</label>
+                                <span className="text-xl font-bold text-gray-900">{tipPct}%</span>
+                            </div>
+                            <input type="range" min="0" max="30" value={tipPct} onChange={e => setTipPct(Number(e.target.value))} className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2" />
+                        </div>
+
+                        <div className="flex flex-col gap-3">
+                            <label className="text-sm font-medium text-gray-500">Split between</label>
+                            <div className="flex items-center gap-4">
+                                <Button variant="secondary" className="w-12 h-12 !p-0 rounded-xl flex items-center justify-center text-gray-700" onClick={() => setSplit(s => Math.max(1, s-1))}><Icon name="minus" size={20}/></Button>
+                                <span className="text-xl font-bold w-12 text-center text-gray-900">{split}</span>
+                                <Button variant="secondary" className="w-12 h-12 !p-0 rounded-xl flex items-center justify-center text-gray-700" onClick={() => setSplit(s => s+1)}><Icon name="plus" size={20}/></Button>
+                            </div>
+                        </div>
+                    </Card>
+
+                    <Card className="p-6 md:p-8 bg-white border border-gray-100 shadow-sm">
+                        <div className="flex flex-col gap-4">
+                            <div className="flex justify-between items-center text-gray-600">
+                                <span className="font-medium text-lg">Tip</span>
+                                <span className="font-bold text-gray-900 text-lg">${tipAmt.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center text-gray-600">
+                                <span className="font-medium text-lg">Total</span>
+                                <span className="font-bold text-gray-900 text-lg">${total.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+                                <span className="font-medium text-gray-500 text-lg">Per person</span>
+                                <span className="text-3xl font-bold text-emerald-600">${perPerson.toFixed(2)}</span>
+                            </div>
+                        </div>
+                    </Card>
+                </div>
+            );
+        };
+
+        // --- Main Tabs ---
+
+        const SolutionCard = ({ iconName, imgFile, title, desc }) => (
+            <Card className="p-8 border border-gray-100 bg-white/80 backdrop-blur-md hover:border-emerald-100 hover:bg-emerald-50/50 group transition-all duration-300 relative overflow-hidden">
+                <div className="w-14 h-14 rounded-2xl bg-gray-50 flex items-center justify-center mb-6 group-hover:bg-emerald-100 group-hover:scale-110 transition-all duration-300 shadow-sm">
+                    <img 
+                        src={imgFile} 
+                        alt={title}
+                        className="w-8 h-8 object-contain relative z-10" 
+                        onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} 
+                    />
+                    <div style={{display: 'none'}} className="text-gray-400 group-hover:text-emerald-600 transition-colors">
+                        <Icon name={iconName} size={28} />
+                    </div>
+                </div>
+                <h4 className="text-xl font-bold mb-3 text-gray-900 tracking-tight">{title}</h4>
+                <p className="text-gray-500 leading-relaxed text-sm font-medium">{desc}</p>
+            </Card>
+        );
+
+        const Home = ({ navigate }) => (
+            <div className="animate-fade-in pb-24 max-w-5xl mx-auto w-full">
+                
+                <section className="relative w-full rounded-[2rem] overflow-hidden bg-white mb-12 p-8 md:p-14 border border-gray-100 shadow-[0_8px_40px_rgb(0,0,0,0.03)]">
+                    <img 
+                        src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?auto=format&fit=crop&w=1200&q=80" 
+                        alt="Hero background" 
+                        className="absolute inset-0 w-full h-full object-cover opacity-10 mix-blend-overlay pointer-events-none" 
+                    />
+                    <div className="relative z-10 max-w-3xl">
+                        <h1 className="text-4xl md:text-[3.5rem] font-bold tracking-tight text-gray-900 text-balance leading-tight mb-6">
+                            Marketing That Builds <br className="hidden md:block"/><span className="text-emerald-600">Compounding Growth</span>
+                        </h1>
+                        
+                        <img 
+                            src="hero-illustration.webp" 
+                            alt="Growth Illustration" 
+                            className="w-full max-w-2xl rounded-2xl shadow-lg mb-8 object-cover border border-gray-100/50 bg-white" 
+                            onError={(e) => e.target.style.display='none'} 
+                        />
+
+                        <p className="text-lg md:text-xl text-gray-500 font-medium text-balance max-w-2xl mb-10 leading-relaxed">
+                            We help brokers, fintech companies, and asset managers acquire high-intent customers.
+                        </p>
+                        <Button onClick={() => navigate('about')} className="text-lg shadow-lg shadow-emerald-600/20 w-full md:w-auto">Request a Growth Audit</Button>
+                    </div>
+                </section>
+
+                <section className="mb-14">
+                    <div className="flex justify-between items-end mb-6 px-2">
+                        <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase">Tools</h3>
+                        <button onClick={() => navigate('tools')} className="text-emerald-600 text-sm font-bold flex items-center hover:text-emerald-700">See All <Icon name="chevron-right" size={16}/></button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                        <Card onClick={() => navigate('tool-percentage')} className="p-6 flex items-center justify-between group border border-gray-100 bg-white/80 backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors"><Icon name="percent" /></div>
+                                <span className="font-bold text-gray-900">Percentage</span>
+                            </div>
+                            <Icon name="chevron-right" className="text-gray-300" />
+                        </Card>
+                        <Card onClick={() => navigate('tool-unit')} className="p-6 flex items-center justify-between group border border-gray-100 bg-white/80 backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors"><Icon name="scale" /></div>
+                                <span className="font-bold text-gray-900">Unit Converter</span>
+                            </div>
+                            <Icon name="chevron-right" className="text-gray-300" />
+                        </Card>
+                        <Card onClick={() => navigate('tool-tip')} className="p-6 flex items-center justify-between group border border-gray-100 bg-white/80 backdrop-blur-md">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3.5 bg-emerald-50 text-emerald-600 rounded-xl group-hover:bg-emerald-600 group-hover:text-white transition-colors"><Icon name="circle-dollar-sign" /></div>
+                                <span className="font-bold text-gray-900">Tip Calculator</span>
+                            </div>
+                            <Icon name="chevron-right" className="text-gray-300" />
+                        </Card>
+                    </div>
+                </section>
+
+                <section className="mb-14">
+                    <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6 px-2">Solutions</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <SolutionCard 
+                            iconName="trending-up" imgFile="icon-1.svg" 
+                            title="Snowball Acquisition Engine" 
+                            desc="Scalable client generation systems engineered for high-LTV user acquisition." 
+                        />
+                        <SolutionCard 
+                            iconName="building" imgFile="icon-2.svg" 
+                            title="Institutional Authority" 
+                            desc="Strategic brand positioning and trust-building for B2B services." 
+                        />
+                        <SolutionCard 
+                            iconName="activity" imgFile="icon-3.svg" 
+                            title="Trading Engagement" 
+                            desc="Data-driven retention models to activate and maintain active traders." 
+                        />
+                    </div>
+                </section>
+                
+                <section>
+                    <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-6 px-2">Featured Case</h3>
+                    <Card className="relative overflow-hidden group min-h-[340px] flex flex-col justify-end p-8 md:p-12 shadow-xl shadow-gray-900/5 cursor-pointer">
+                        <img 
+                            src="case.webp" 
+                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" 
+                            alt="GCC Expansion Case"
+                            onError={(e) => { e.target.style.display='none'; e.target.nextSibling.style.display='block'; }} 
+                        />
+                        <div style={{display: 'none'}} className="absolute inset-0 bg-gray-900">
+                            <div className="absolute top-0 right-0 p-8 opacity-10 text-white"><Icon name="globe" size={160} /></div>
+                        </div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/70 to-transparent"></div>
+                        
+                        <div className="relative z-10 text-white">
+                            <span className="inline-block px-4 py-1.5 bg-emerald-500/20 backdrop-blur-md text-emerald-300 text-xs font-bold uppercase tracking-wider rounded-full mb-6 border border-emerald-500/30">GCC Expansion</span>
+                            <div className="flex items-baseline gap-4 mb-2">
+                                <div className="text-5xl md:text-7xl font-bold text-emerald-400 tracking-tighter">+45%</div>
+                                <h4 className="text-xl md:text-2xl font-bold mb-1">active traders</h4>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-6 font-medium tracking-wide uppercase">* Campaign period, results may vary.</p>
+                        </div>
+                    </Card>
+                </section>
+            </div>
+        );
+
+        const ToolsList = ({ navigate }) => {
+            const [searchQuery, setSearchQuery] = useState('');
+
+            const tools = [
+                { id: 'tool-percentage', name: 'Percentage Calculator', desc: 'Percent of / change', icon: 'percent', category: 'Calculators' },
+                { id: 'tool-tip', name: 'Tip Calculator', desc: 'Split the bill', icon: 'circle-dollar-sign', category: 'Calculators' },
+                { id: 'tool-unit', name: 'Unit Converter', desc: 'Length, weight, temp', icon: 'scale', category: 'Converters' }
+            ];
+
+            const filteredTools = tools.filter(t => 
+                t.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                t.desc.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+
+            const calculators = filteredTools.filter(t => t.category === 'Calculators');
+            const converters = filteredTools.filter(t => t.category === 'Converters');
+
+            return (
+                <div className="animate-fade-in pb-24 max-w-3xl mx-auto w-full">
+                    <div className="mb-8">
+                        <h2 className="text-3xl font-bold mb-6 tracking-tight">Tools</h2>
+                        <div className="relative">
+                            <Icon name="search" className="absolute left-4 top-4 text-gray-400" size={20} />
+                            <input 
+                                type="text" 
+                                placeholder="Search tools..." 
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="w-full bg-white/90 backdrop-blur-sm border border-gray-100 rounded-2xl py-4 pl-12 pr-4 shadow-[0_8px_30px_rgb(0,0,0,0.03)] focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none font-medium transition-all" 
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-10">
+                        {calculators.length > 0 && (
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-5 px-2">Calculators</h3>
+                                <div className="flex flex-col gap-4">
+                                    {calculators.map(t => (
+                                        <Card key={t.id} onClick={() => navigate(t.id)} className="p-5 flex items-center justify-between border border-gray-100 hover:border-emerald-100 bg-white/80 backdrop-blur-md">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 flex items-center justify-center bg-gray-50 text-gray-700 rounded-2xl"><Icon name={t.icon} size={28}/></div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900 text-lg">{t.name}</h4>
+                                                    <p className="text-sm text-gray-500 font-medium">{t.desc}</p>
+                                                </div>
+                                            </div>
+                                            <Icon name="chevron-right" className="text-gray-300 mr-2" />
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {converters.length > 0 && (
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-400 tracking-widest uppercase mb-5 px-2">Converters</h3>
+                                <div className="flex flex-col gap-4">
+                                    {converters.map(t => (
+                                        <Card key={t.id} onClick={() => navigate(t.id)} className="p-5 flex items-center justify-between border border-gray-100 hover:border-emerald-100 bg-white/80 backdrop-blur-md">
+                                            <div className="flex items-center gap-5">
+                                                <div className="w-14 h-14 flex items-center justify-center bg-gray-50 text-gray-700 rounded-2xl"><Icon name={t.icon} size={28}/></div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-900 text-lg">{t.name}</h4>
+                                                    <p className="text-sm text-gray-500 font-medium">{t.desc}</p>
+                                                </div>
+                                            </div>
+                                            <Icon name="chevron-right" className="text-gray-300 mr-2" />
+                                        </Card>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                        
+                        {filteredTools.length === 0 && (
+                            <div className="text-center py-10 px-4 text-gray-500 font-medium">
+                                No tools found matching "{searchQuery}".
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const About = () => (
+            <div className="animate-fade-in pb-24 max-w-3xl mx-auto w-full">
+                <div className="flex flex-col items-center text-center pt-8 pb-12">
+                    <Logo className="h-16 w-auto mb-6" />
+                    <p className="text-lg text-gray-500 font-medium text-balance max-w-lg leading-relaxed">
+                        A specialized growth agency for brokers, fintech companies, and asset managers.
+                    </p>
+                </div>
+
+                <div className="mb-12">
+                    <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-5 px-2">Solutions</h3>
+                    <Card className="p-2 border border-gray-100 divide-y divide-gray-100 bg-white/80 backdrop-blur-md">
+                        <div className="p-4 flex items-center gap-4">
+                            <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><Icon name="trending-up" size={20} /></div>
+                            <span className="font-bold text-gray-900">Snowball Acquisition Engine</span>
+                        </div>
+                        <div className="p-4 flex items-center gap-4">
+                            <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><Icon name="building" size={20} /></div>
+                            <span className="font-bold text-gray-900">Institutional Authority</span>
+                        </div>
+                        <div className="p-4 flex items-center gap-4">
+                            <div className="bg-emerald-50 text-emerald-600 p-2 rounded-lg"><Icon name="activity" size={20} /></div>
+                            <span className="font-bold text-gray-900">Trading Engagement</span>
+                        </div>
+                    </Card>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <section className="flex flex-col h-full">
+                        <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-5 px-2">Contact</h3>
+                        <Card className="p-8 border border-gray-100 flex-1 flex flex-col justify-center bg-white/80 backdrop-blur-md">
+                            <div className="flex flex-col gap-6 w-full">
+                                <Button className="w-full">Request a Growth Audit</Button>
+                                <a href="mailto:hello@snowgrowth.com" className="flex items-center justify-center gap-3 text-gray-700 hover:text-emerald-600 transition-colors bg-white border border-gray-100 py-3.5 rounded-xl font-bold shadow-sm hover:bg-gray-50">
+                                    <Icon name="mail" size={20} />
+                                    <span>hello@snowgrowth.com</span>
+                                </a>
+                            </div>
+                        </Card>
+                    </section>
+
+                    <section className="flex flex-col h-full">
+                        <h3 className="text-sm font-bold text-gray-400 tracking-widest uppercase mb-5 px-2">Legal</h3>
+                        <Card className="p-8 border border-gray-100 flex-1 flex flex-col justify-between bg-white/80 backdrop-blur-md">
+                            <div>
+                                <p className="text-sm text-gray-500 font-medium mb-6 leading-relaxed">
+                                    Utility tools for reference only. Not financial, investment, or marketing advice.
+                                </p>
+                                <div className="flex flex-wrap gap-4 text-sm font-bold text-emerald-600 mb-6">
+                                    <a href="#" className="hover:underline">Privacy Policy</a>
+                                    <a href="#" className="hover:underline">Terms of Service</a>
+                                    <a href="#" className="hover:underline">Risk Disclosure</a>
+                                </div>
+                            </div>
+                            <div className="text-xs font-medium text-gray-400 pt-5 border-t border-gray-100">
+                                &copy; 2026 Snow Growth. All rights reserved.
+                            </div>
+                        </Card>
+                    </section>
+                </div>
+            </div>
+        );
+
+        // --- Layout Shell ---
+
+        const App = () => {
+            const [currentView, setCurrentView] = useState('home');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+            useEffect(() => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }, [currentView]);
+
+            useEffect(() => {
+                if (isMobileMenuOpen) document.body.style.overflow = 'hidden';
+                else document.body.style.overflow = 'auto';
+            }, [isMobileMenuOpen]);
+
+            const renderView = () => {
+                switch(currentView) {
+                    case 'home': return <Home navigate={setCurrentView} />;
+                    case 'tools': return <ToolsList navigate={setCurrentView} />;
+                    case 'about': return <About navigate={setCurrentView} />;
+                    case 'tool-percentage': return <PercentageCalc navigate={setCurrentView} />;
+                    case 'tool-unit': return <UnitCalc navigate={setCurrentView} />;
+                    case 'tool-tip': return <TipCalc navigate={setCurrentView} />;
+                    default: return <Home navigate={setCurrentView} />;
+                }
+            };
+
+            const isMainTab = ['home', 'tools', 'about'].includes(currentView);
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-emerald-50/50 via-[#fafafa] to-gray-50 flex flex-col md:flex-row relative">
+                    
+                    <aside className="hidden md:flex flex-col w-72 fixed h-full border-r border-gray-200/60 bg-white/80 backdrop-blur-xl p-8 z-20 shadow-[4px_0_24px_rgb(0,0,0,0.02)]">
+                        <div className="flex items-center gap-3 mb-14 cursor-pointer" onClick={() => setCurrentView('home')}>
+                            <Logo className="h-8 w-auto" />
+                        </div>
+                        <nav className="flex flex-col gap-3">
+                            <button onClick={() => setCurrentView('home')} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${currentView === 'home' ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm'}`}><Icon name="home" size={22} /> Home</button>
+                            <button onClick={() => setCurrentView('tools')} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${['tools', 'tool-percentage', 'tool-unit', 'tool-tip'].includes(currentView) ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm'}`}><Icon name="grid" size={22} /> Tools</button>
+                            <button onClick={() => setCurrentView('about')} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${currentView === 'about' ? 'bg-emerald-50 text-emerald-600 shadow-sm' : 'text-gray-500 hover:bg-white hover:text-gray-900 hover:shadow-sm'}`}><Icon name="info" size={22} /> About</button>
+                        </nav>
+                    </aside>
+
+                    {isMobileMenuOpen && (
+                        <div className="fixed inset-0 z-[100] flex md:hidden">
+                            <div className="absolute inset-0 bg-gray-900/30 backdrop-blur-sm transition-opacity" onClick={() => setIsMobileMenuOpen(false)}></div>
+                            <div className="relative w-64 max-w-sm bg-white h-full shadow-2xl flex flex-col p-6 animate-[slideIn_0.3s_ease-out]">
+                                <div className="flex items-center justify-between mb-10 mt-2">
+                                    <div className="flex items-center gap-3">
+                                        <Logo className="h-8 w-auto" />
+                                    </div>
+                                    <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 text-gray-400 hover:bg-gray-100 rounded-full transition-colors"><Icon name="x" size={24}/></button>
+                                </div>
+                                <nav className="flex flex-col gap-3">
+                                    <button onClick={() => { setCurrentView('home'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${currentView === 'home' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-500'}`}><Icon name="home" size={22} /> Home</button>
+                                    <button onClick={() => { setCurrentView('tools'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${['tools', 'tool-percentage', 'tool-unit', 'tool-tip'].includes(currentView) ? 'bg-emerald-50 text-emerald-600' : 'text-gray-500'}`}><Icon name="grid" size={22} /> Tools</button>
+                                    <button onClick={() => { setCurrentView('about'); setIsMobileMenuOpen(false); }} className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold transition-all ${currentView === 'about' ? 'bg-emerald-50 text-emerald-600' : 'text-gray-500'}`}><Icon name="info" size={22} /> About</button>
+                                </nav>
+                            </div>
+                        </div>
+                    )}
+                    <style>{`@keyframes slideIn { from { transform: translateX(-100%); } to { transform: translateX(0); } }`}</style>
+
+                    <main className="flex-1 w-full px-4 pt-6 md:pt-12 md:pl-[19rem] transition-all duration-300">
+                        {currentView === 'home' && (
+                            <header className="md:hidden flex items-center justify-between mb-8 px-2">
+                                <div className="flex items-center gap-3">
+                                    <Logo className="h-8 w-auto" />
+                                </div>
+                            </header>
+                        )}
+                        
+                        {renderView()}
+                    </main>
+
+                    {isMainTab && (
+                        <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-nav z-50 px-6 py-2 pb-6 flex justify-between items-center">
+                            <button onClick={() => setCurrentView('home')} className={`flex flex-col items-center p-2 min-w-[64px] transition-colors ${currentView === 'home' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                <Icon name="home" size={24} className={currentView === 'home' ? 'mb-1' : 'mb-1'} />
+                                <span className="text-[11px] font-bold">Home</span>
+                            </button>
+                            <button onClick={() => setCurrentView('tools')} className={`flex flex-col items-center p-2 min-w-[64px] transition-colors ${currentView === 'tools' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                <Icon name="grid" size={24} className="mb-1" />
+                                <span className="text-[11px] font-bold">Tools</span>
+                            </button>
+                            <button onClick={() => setCurrentView('about')} className={`flex flex-col items-center p-2 min-w-[64px] transition-colors ${currentView === 'about' ? 'text-emerald-600' : 'text-gray-400'}`}>
+                                <Icon name="info" size={24} className="mb-1" />
+                                <span className="text-[11px] font-bold">About</span>
+                            </button>
+                        </nav>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
