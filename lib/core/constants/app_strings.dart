@@ -76,12 +76,11 @@ class AppStrings {
   static const String legalDisclaimer =
       'Utility tools for reference only. Not financial, investment, or marketing advice.';
   static const String privacyPolicy = 'Privacy Policy';
-  static const String termsOfService = 'Terms of Service';
+  static const String termsOfService = 'Terms of Use';
   static const String riskDisclosure = 'Risk Disclosure';
   static const String copyright = '© 2026 Snow Growth. All rights reserved.';
   static const String contactEmail = 'hello@snowgrowth.com';
-
-  // Tool menu
+  static const String linkOpenFailed = 'Unable to open this link right now.';
   static const String clearData = 'Clear Data';
   static const String exportData = 'Export Data';
 
@@ -90,32 +89,6 @@ class AppStrings {
   static const String back = 'Back';
 
   // Legal content
-  static const String privacyContent = '''
-Privacy Policy
-
-Snow Growth ("we", "our", or "us") respects your privacy. This app does not collect personal data beyond what is stored locally on your device for tool preferences and calculations.
-
-Local Storage: Calculator inputs and settings are saved on your device using local storage. This data is not transmitted to our servers.
-
-Contact: For privacy inquiries, email hello@snowgrowth.com.
-
-Last updated: 2026.
-''';
-
-  static const String termsContent = '''
-Terms of Service
-
-By using the Snow Growth app, you agree to these terms.
-
-The app provides utility calculators for reference only. Results should be verified independently.
-
-We reserve the right to update these terms. Continued use constitutes acceptance of changes.
-
-Contact: hello@snowgrowth.com
-
-Last updated: 2026.
-''';
-
   static const String riskContent = '''
 Risk Disclosure
 

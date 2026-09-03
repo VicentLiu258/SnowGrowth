@@ -18,4 +18,9 @@ class AppConfig {
   );
 
   static const String toolWebsiteTrigger = 'ic';
+
+  static const String privacyPolicyUrl =
+      'https://www.snowgrowth.com/legal/privacy-policy';
+  static const String termsOfUseUrl =
+      'https://www.snowgrowth.com/legal/terms-of-use';
 }

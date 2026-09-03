@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
+import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
+import 'package:snow_growth/core/utils/url_launcher.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
@@ -15,6 +17,15 @@ class AboutPage extends StatelessWidget {
     final uri = Uri(scheme: 'mailto', path: AppStrings.contactEmail);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
+    }
+  }
+
+  Future<void> _openLegalUrl(BuildContext context, String url) async {
+    final opened = await openExternalUrl(url);
+    if (!opened && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(AppStrings.linkOpenFailed)),
+      );
     }
   }
 
@@ -144,15 +155,25 @@ class AboutPage extends StatelessWidget {
                   children: [
                     _LegalLink(
                       label: AppStrings.privacyPolicy,
-                      content: AppStrings.privacyContent,
+                      onTap: () => _openLegalUrl(
+                        context,
+                        AppConfig.privacyPolicyUrl,
+                      ),
                     ),
                     _LegalLink(
                       label: AppStrings.termsOfService,
-                      content: AppStrings.termsContent,
+                      onTap: () => _openLegalUrl(
+                        context,
+                        AppConfig.termsOfUseUrl,
+                      ),
                     ),
                     _LegalLink(
                       label: AppStrings.riskDisclosure,
-                      content: AppStrings.riskContent,
+                      onTap: () => showLegalDialog(
+                        context,
+                        title: AppStrings.riskDisclosure,
+                        content: AppStrings.riskContent,
+                      ),
                     ),
                   ],
                 ),
@@ -210,15 +231,15 @@ class _SolutionRow extends StatelessWidget {
 }
 
 class _LegalLink extends StatelessWidget {
-  const _LegalLink({required this.label, required this.content});
+  const _LegalLink({required this.label, required this.onTap});
 
   final String label;
-  final String content;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      onTap: () => showLegalDialog(context, title: label, content: content),
+      onTap: onTap,
       child: Text(
         label,
         style: const TextStyle(
