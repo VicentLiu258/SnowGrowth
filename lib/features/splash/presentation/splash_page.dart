@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
-import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 
 class SplashView extends StatelessWidget {
@@ -18,15 +17,21 @@ class SplashView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const AppLogo.mark(height: 96),
+              Image.asset(
+                'assets/brand_mark.png',
+                width: 120,
+                height: 120,
+                fit: BoxFit.contain,
+              ),
               const SizedBox(height: 20),
-              Text(
+              const Text(
                 AppStrings.appName,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFF012646),
-                      letterSpacing: -0.4,
-                    ),
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF012646),
+                  letterSpacing: -0.4,
+                ),
               ),
             ],
           ),
@@ -43,13 +48,22 @@ class SplashPage extends StatefulWidget {
   State<SplashPage> createState() => _SplashPageState();
 }
 
-class _SplashPageState extends State<SplashPage> {
-  static const _duration = Duration(milliseconds: 1600);
+class _SplashPageState extends State<SplashPage>
+    with SingleTickerProviderStateMixin {
+  static const _duration = Duration(milliseconds: 2500);
   Timer? _timer;
+  late final AnimationController _fadeController;
+  late final Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
+    _fadeController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 450),
+    );
+    _fade = CurvedAnimation(parent: _fadeController, curve: Curves.easeOut);
+    _fadeController.forward();
     _timer = Timer(_duration, _goToApp);
   }
 
@@ -58,7 +72,7 @@ class _SplashPageState extends State<SplashPage> {
     Navigator.of(context).pushReplacement(
       PageRouteBuilder<void>(
         pageBuilder: (_, __, ___) => const MainScaffold(),
-        transitionDuration: const Duration(milliseconds: 280),
+        transitionDuration: const Duration(milliseconds: 350),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
         },
@@ -69,11 +83,15 @@ class _SplashPageState extends State<SplashPage> {
   @override
   void dispose() {
     _timer?.cancel();
+    _fadeController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return const SplashView();
+    return FadeTransition(
+      opacity: _fade,
+      child: const SplashView(),
+    );
   }
 }

@@ -281,9 +281,9 @@ class _Sidebar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: 280,
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.8),
-        border: const Border(right: BorderSide(color: AppColors.gray200)),
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(right: BorderSide(color: AppColors.gray200)),
       ),
       padding: EdgeInsets.only(
         top: 24 + MediaQuery.paddingOf(context).top,
@@ -379,9 +379,9 @@ class _BottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.85),
-        border: const Border(top: BorderSide(color: AppColors.gray100)),
+      decoration: const BoxDecoration(
+        color: AppColors.cardBackground,
+        border: Border(top: BorderSide(color: AppColors.gray100)),
       ),
       padding: EdgeInsets.fromLTRB(
         24,

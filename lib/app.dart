@@ -12,14 +12,10 @@ class SnowGrowthApp extends StatelessWidget {
       title: AppStrings.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       builder: (context, child) {
-        final overlay = Theme.of(context).brightness == Brightness.dark
-            ? AppTheme.darkOverlay
-            : AppTheme.lightOverlay;
         return AnnotatedRegion(
-          value: overlay,
+          value: AppTheme.lightOverlay,
           child: child ?? const SizedBox.shrink(),
         );
       },

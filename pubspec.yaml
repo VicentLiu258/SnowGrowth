@@ -32,5 +32,8 @@ flutter:
   assets:
     - assets/logo.svg
     - assets/logo_mark.svg
+    - assets/brand_mark.png
+    - assets/app_icon.png
+    - assets/splash_brand.png
     - assets/hero-illustration.webp
     - assets/case.webp

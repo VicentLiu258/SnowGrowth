@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:snow_growth/app.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
@@ -10,9 +11,10 @@ void main() {
     await tester.pump();
 
     expect(find.text(AppStrings.appName), findsWidgets);
+    expect(find.byType(Image), findsWidgets);
 
-    await tester.pump(const Duration(milliseconds: 1600));
-    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 2500));
+    await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(seconds: 3));
 
     expect(find.textContaining(AppStrings.heroTitle), findsOneWidget);
