@@ -8,6 +8,7 @@ import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
+import 'package:snow_growth/features/splash/presentation/splash_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/tools/presentation/percentage_calculator_page.dart';
 import 'package:snow_growth/features/tools/presentation/tip_calculator_page.dart';
@@ -196,12 +197,15 @@ class _MainScaffoldState extends State<MainScaffold> {
       closeTool: _closeTool,
       activeTool: _activeTool,
       child: Scaffold(
+        extendBody: true,
+        extendBodyBehindAppBar: true,
         body: Row(
           children: [
             if (isWide)
               _Sidebar(currentTab: _currentTab, onTabChanged: _setTab),
             Expanded(
               child: SafeArea(
+                bottom: false,
                 child: Column(
                   children: [
                     if (!isWide &&
@@ -263,11 +267,7 @@ class _StartupLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(color: AppColors.emerald600),
-      ),
-    );
+    return const SplashView();
   }
 }
 
@@ -285,7 +285,12 @@ class _Sidebar extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.8),
         border: const Border(right: BorderSide(color: AppColors.gray200)),
       ),
-      padding: const EdgeInsets.all(24),
+      padding: EdgeInsets.only(
+        top: 24 + MediaQuery.paddingOf(context).top,
+        left: 24,
+        right: 24,
+        bottom: 24,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -378,7 +383,12 @@ class _BottomNav extends StatelessWidget {
         color: Colors.white.withValues(alpha: 0.85),
         border: const Border(top: BorderSide(color: AppColors.gray100)),
       ),
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+      padding: EdgeInsets.fromLTRB(
+        24,
+        8,
+        24,
+        8 + MediaQuery.paddingOf(context).bottom,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [

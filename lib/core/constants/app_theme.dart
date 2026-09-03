@@ -1,9 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 
 class AppTheme {
   AppTheme._();
+
+  static const SystemUiOverlayStyle lightOverlay = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.dark,
+    statusBarBrightness: Brightness.light,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.dark,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarContrastEnforced: false,
+  );
+
+  static const SystemUiOverlayStyle darkOverlay = SystemUiOverlayStyle(
+    statusBarColor: Colors.transparent,
+    statusBarIconBrightness: Brightness.light,
+    statusBarBrightness: Brightness.dark,
+    systemNavigationBarColor: Colors.transparent,
+    systemNavigationBarIconBrightness: Brightness.light,
+    systemNavigationBarDividerColor: Colors.transparent,
+    systemStatusBarContrastEnforced: false,
+    systemNavigationBarContrastEnforced: false,
+  );
 
   static ThemeData get lightTheme {
     final base = ThemeData(
@@ -23,7 +46,9 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        systemOverlayStyle: lightOverlay,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -90,6 +115,8 @@ class AppTheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
+        systemOverlayStyle: darkOverlay,
         titleTextStyle: GoogleFonts.inter(
           fontSize: 24,
           fontWeight: FontWeight.bold,
@@ -106,8 +133,8 @@ class AppTheme {
   }
 
   static BoxShadow get cardShadow => BoxShadow(
-    color: Colors.black.withValues(alpha: 0.04),
-    blurRadius: 30,
-    offset: const Offset(0, 8),
-  );
+        color: Colors.black.withValues(alpha: 0.04),
+        blurRadius: 30,
+        offset: const Offset(0, 8),
+      );
 }

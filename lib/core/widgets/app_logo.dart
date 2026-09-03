@@ -3,14 +3,17 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.height = 32});
+  const AppLogo({super.key, this.height = 32}) : markOnly = false;
+
+  const AppLogo.mark({super.key, this.height = 88}) : markOnly = true;
 
   final double height;
+  final bool markOnly;
 
   @override
   Widget build(BuildContext context) {
     return SvgPicture.asset(
-      'assets/logo.svg',
+      markOnly ? 'assets/logo_mark.svg' : 'assets/logo.svg',
       height: height,
       fit: BoxFit.contain,
       placeholderBuilder: (_) => _TextLogo(height: height),

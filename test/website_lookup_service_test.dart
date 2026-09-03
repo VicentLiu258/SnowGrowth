@@ -43,10 +43,9 @@ void main() {
 }
 
 class _FakeClient extends http.BaseClient {
-  _FakeClient(this.body, {this.statusCode = 200});
+  _FakeClient(this.body);
 
   final String body;
-  final int statusCode;
   Uri? requestedUri;
 
   @override
@@ -54,7 +53,7 @@ class _FakeClient extends http.BaseClient {
     requestedUri = request.url;
     return http.StreamedResponse(
       Stream<List<int>>.value(utf8.encode(body)),
-      statusCode,
+      200,
       request: request,
     );
   }
