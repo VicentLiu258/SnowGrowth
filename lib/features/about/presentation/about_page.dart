@@ -4,6 +4,7 @@ import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
+import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 import 'package:snow_growth/features/about/presentation/legal_dialog.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -22,11 +23,11 @@ class AboutPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+    return TopAlignedBody(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const AppLogo(height: 64),
+          const Center(child: AppLogo(height: 64)),
           const SizedBox(height: 16),
           Text(
             AppStrings.aboutDesc,

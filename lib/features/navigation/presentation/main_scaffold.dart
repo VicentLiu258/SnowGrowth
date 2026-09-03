@@ -127,9 +127,24 @@ class _MainScaffoldState extends State<MainScaffold> {
                     Expanded(
                       child: AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
-                        child: _activeTool != null
-                            ? _buildToolPage()
-                            : _buildTabPage(),
+                        layoutBuilder: (currentChild, previousChildren) {
+                          return Stack(
+                            alignment: Alignment.topCenter,
+                            fit: StackFit.expand,
+                            children: [
+                              ...previousChildren,
+                              if (currentChild != null) currentChild,
+                            ],
+                          );
+                        },
+                        child: KeyedSubtree(
+                          key: ValueKey(
+                            _activeTool?.name ?? _currentTab.name,
+                          ),
+                          child: _activeTool != null
+                              ? _buildToolPage()
+                              : _buildTabPage(),
+                        ),
                       ),
                     ),
                   ],

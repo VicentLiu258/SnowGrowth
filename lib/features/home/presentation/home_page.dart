@@ -3,6 +3,7 @@ import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
+import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 
 class HomePage extends StatelessWidget {
@@ -19,8 +20,7 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 100),
+    return TopAlignedBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

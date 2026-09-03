@@ -6,6 +6,7 @@ import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/app_input.dart';
 import 'package:snow_growth/core/widgets/tool_menu.dart';
+import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 
 class PercentageCalculatorPage extends StatefulWidget {
   const PercentageCalculatorPage({super.key, required this.onBack});
@@ -123,12 +124,13 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Center(child: CircularProgressIndicator());
+      return const TopAlignedLoading();
     }
 
-    return SingleChildScrollView(
+    return TopAlignedBody(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppTopBar(
             title: AppStrings.percentage,

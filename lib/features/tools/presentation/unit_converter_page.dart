@@ -6,6 +6,7 @@ import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/app_input.dart';
 import 'package:snow_growth/core/widgets/tool_menu.dart';
+import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 import 'package:snow_growth/features/tools/logic/unit_converter_data.dart';
 
 class UnitConverterPage extends StatefulWidget {
@@ -227,15 +228,15 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Center(child: CircularProgressIndicator());
+      return const TopAlignedLoading();
     }
 
     final units = UnitConverterData.units[_category]!;
 
-    return SingleChildScrollView(
+    return TopAlignedBody(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           AppTopBar(
             title: AppStrings.unitConverter,
