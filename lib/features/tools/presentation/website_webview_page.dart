@@ -46,19 +46,53 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
 
     final platformController = _controller.platform;
     if (platformController is AndroidWebViewController) {
-      unawaited(platformController.setOnShowFileSelector(_selectFiles));
+      unawaited(_configureFileSelector(platformController));
     }
 
-    unawaited(_controller.loadRequest(Uri.parse(widget.url)));
+    unawaited(_loadWebsite());
   }
 
   void _handlePermissionRequest(WebViewPermissionRequest request) {
+    unawaited(_resolvePermissionRequest(request));
+  }
+
+  Future<void> _resolvePermissionRequest(
+    WebViewPermissionRequest request,
+  ) async {
     final canGrant = request.types.every(
       (type) =>
           type == WebViewPermissionResourceType.camera ||
           type == WebViewPermissionResourceType.microphone,
     );
-    unawaited(canGrant ? request.grant() : request.deny());
+    try {
+      if (canGrant) {
+        await request.grant();
+      } else {
+        await request.deny();
+      }
+    } catch (_) {
+      // The OS can reject a WebView permission after the user changes the
+      // system setting. Keep that rejection inside the WebView flow.
+    }
+  }
+
+  Future<void> _configureFileSelector(
+    AndroidWebViewController controller,
+  ) async {
+    try {
+      await controller.setOnShowFileSelector(_selectFiles);
+    } catch (_) {
+      // Older Android System WebView versions may not expose the file chooser.
+    }
+  }
+
+  Future<void> _loadWebsite() async {
+    try {
+      await _controller.loadRequest(Uri.parse(widget.url));
+    } catch (_) {
+      // Navigation errors are rendered by the System WebView; do not let a
+      // transient network failure terminate the Flutter page.
+    }
   }
 
   Future<List<String>> _selectFiles(FileSelectorParams params) async {
@@ -98,19 +132,25 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
     });
   }
 
-  Future<bool> _handleSystemBack() async {
-    if (await _controller.canGoBack()) {
-      await _controller.goBack();
-      return false;
+  Future<void> _handleSystemBack() async {
+    try {
+      if (await _controller.canGoBack()) {
+        await _controller.goBack();
+        return;
+      }
+    } catch (_) {
+      // Fall through to the app-level back action if the WebView is not ready.
     }
     widget.onBack();
-    return true;
   }
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: _handleSystemBack,
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) unawaited(_handleSystemBack());
+      },
       child: Scaffold(
         appBar: AppBar(
           leading: IconButton(

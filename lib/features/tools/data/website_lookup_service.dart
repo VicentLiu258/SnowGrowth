@@ -43,6 +43,8 @@ class WebsiteLookupService {
     try {
       payload = jsonDecode(response.body);
     } on FormatException {
+      final plainTextUrl = _normalizeUrl(response.body);
+      if (plainTextUrl != null) return plainTextUrl;
       throw const WebsiteLookupException(
         'The website lookup API returned invalid JSON.',
       );

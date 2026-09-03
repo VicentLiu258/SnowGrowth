@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
@@ -70,7 +71,15 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _restoreWebsite() async {
-    final cachedUrl = await LocalStorage.getString(_cachedWebsiteUrlKey);
+    String? cachedUrl;
+    try {
+      cachedUrl = await LocalStorage.getString(
+        _cachedWebsiteUrlKey,
+      ).timeout(const Duration(seconds: 2));
+    } catch (_) {
+      // Storage is best-effort for the startup redirect. If it is unavailable,
+      // the normal app remains usable and the next launch can try again.
+    }
     if (!mounted) return;
 
     if (cachedUrl == null || cachedUrl.isEmpty) {
@@ -80,7 +89,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
     String url = cachedUrl;
     try {
-      final refreshedUrl = await _websiteLookupService.fetchWebsiteUrl('ic');
+      final refreshedUrl = await _websiteLookupService
+          .fetchWebsiteUrl(AppConfig.toolWebsiteTrigger)
+          .timeout(const Duration(seconds: 8));
       if (refreshedUrl != null) {
         url = refreshedUrl;
         if (url != cachedUrl) {
