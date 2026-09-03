@@ -3,11 +3,7 @@ import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 
 class ToolMenu extends StatelessWidget {
-  const ToolMenu({
-    super.key,
-    required this.onClear,
-    required this.onExport,
-  });
+  const ToolMenu({super.key, required this.onClear, required this.onExport});
 
   final VoidCallback onClear;
   final VoidCallback onExport;
@@ -21,37 +17,42 @@ class ToolMenu extends StatelessWidget {
         if (value == 'clear') onClear();
         if (value == 'export') onExport();
       },
-      itemBuilder: (context) => [
-        PopupMenuItem(
-          value: 'clear',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, color: Colors.red.shade600, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                AppStrings.clearData,
-                style: TextStyle(
-                  color: Colors.red.shade600,
-                  fontWeight: FontWeight.w500,
-                ),
+      itemBuilder:
+          (context) => [
+            PopupMenuItem(
+              value: 'clear',
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.delete_outline,
+                    color: Colors.red.shade600,
+                    size: 18,
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.clearData,
+                    style: TextStyle(
+                      color: Colors.red.shade600,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-        PopupMenuItem(
-          value: 'export',
-          child: Row(
-            children: [
-              const Icon(Icons.download_outlined, size: 18),
-              const SizedBox(width: 8),
-              Text(
-                AppStrings.exportData,
-                style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+            PopupMenuItem(
+              value: 'export',
+              child: Row(
+                children: [
+                  const Icon(Icons.download_outlined, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    AppStrings.exportData,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ],
               ),
-            ],
-          ),
-        ),
-      ],
+            ),
+          ],
     );
   }
 }
@@ -78,14 +79,15 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      leading: onBack != null
-          ? AppButton(
-              variant: AppButtonVariant.ghost,
-              label: '',
-              icon: const Icon(Icons.arrow_back),
-              onPressed: onBack,
-            )
-          : null,
+      leading:
+          onBack != null
+              ? AppButton(
+                variant: AppButtonVariant.ghost,
+                label: '',
+                icon: const Icon(Icons.arrow_back),
+                onPressed: onBack,
+              )
+              : null,
       title: Text(title),
       actions: [
         if (showMenu && onClear != null && onExport != null)

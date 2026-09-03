@@ -42,7 +42,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.gray200),
@@ -103,8 +106,8 @@ class AppTheme {
   }
 
   static BoxShadow get cardShadow => BoxShadow(
-        color: Colors.black.withValues(alpha: 0.04),
-        blurRadius: 30,
-        offset: const Offset(0, 8),
-      );
+    color: Colors.black.withValues(alpha: 0.04),
+    blurRadius: 30,
+    offset: const Offset(0, 8),
+  );
 }

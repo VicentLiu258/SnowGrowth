@@ -56,7 +56,8 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
         _category = UnitCategory.values[catIndex];
       }
       _fromUnit = from ?? UnitConverterData.units[_category]!.first;
-      _toUnit = to ??
+      _toUnit =
+          to ??
           (UnitConverterData.units[_category]!.length > 1
               ? UnitConverterData.units[_category]![1]
               : UnitConverterData.units[_category]!.first);
@@ -212,17 +213,14 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
   }
 
   Future<void> _export() async {
-    await DataExporter.exportJson(
-      {
-        'tool': AppStrings.unitConverter,
-        'category': _category.name,
-        'fromUnit': _fromUnit,
-        'toUnit': _toUnit,
-        'value1': _val1,
-        'value2': _val2,
-      },
-      'unit_converter_data.json',
-    );
+    await DataExporter.exportJson({
+      'tool': AppStrings.unitConverter,
+      'category': _category.name,
+      'fromUnit': _fromUnit,
+      'toUnit': _toUnit,
+      'value1': _val1,
+      'value2': _val2,
+    }, 'unit_converter_data.json');
   }
 
   @override
@@ -248,25 +246,26 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: UnitCategory.values.map((category) {
-                final selected = _category == category;
-                return Padding(
-                  padding: const EdgeInsets.only(right: 8, bottom: 16),
-                  child: FilterChip(
-                    label: Text(UnitConverterData.categoryLabel(category)),
-                    selected: selected,
-                    onSelected: (_) => _changeCategory(category),
-                    selectedColor: AppColors.gray900,
-                    labelStyle: TextStyle(
-                      color: selected ? Colors.white : AppColors.gray600,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    backgroundColor: Colors.white,
-                    side: const BorderSide(color: AppColors.gray200),
-                    showCheckmark: false,
-                  ),
-                );
-              }).toList(),
+              children:
+                  UnitCategory.values.map((category) {
+                    final selected = _category == category;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8, bottom: 16),
+                      child: FilterChip(
+                        label: Text(UnitConverterData.categoryLabel(category)),
+                        selected: selected,
+                        onSelected: (_) => _changeCategory(category),
+                        selectedColor: AppColors.gray900,
+                        labelStyle: TextStyle(
+                          color: selected ? Colors.white : AppColors.gray600,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        backgroundColor: Colors.white,
+                        side: const BorderSide(color: AppColors.gray200),
+                        showCheckmark: false,
+                      ),
+                    );
+                  }).toList(),
             ),
           ),
           AppCard(
@@ -299,10 +298,7 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
             child: Text(
               '${_val1.isEmpty ? '0' : _val1} $_fromUnit = ${_val2.isEmpty ? '0' : _val2} $_toUnit',
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-              ),
+              style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -345,11 +341,10 @@ class _UnitField extends StatelessWidget {
           decoration: const InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           ),
-          items: units
-              .map(
-                (u) => DropdownMenuItem(value: u, child: Text(u)),
-              )
-              .toList(),
+          items:
+              units
+                  .map((u) => DropdownMenuItem(value: u, child: Text(u)))
+                  .toList(),
           onChanged: (value) {
             if (value != null) onUnitChanged(value);
           },

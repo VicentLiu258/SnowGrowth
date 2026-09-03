@@ -68,13 +68,12 @@ class _AppInputState extends State<AppInput> {
           controller: _controller,
           onChanged: widget.onChanged,
           keyboardType: widget.keyboardType,
-          inputFormatters: widget.keyboardType == TextInputType.number ||
-                  widget.keyboardType ==
-                      const TextInputType.numberWithOptions(decimal: true)
-              ? [
-                  FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
-                ]
-              : null,
+          inputFormatters:
+              widget.keyboardType == TextInputType.number ||
+                      widget.keyboardType ==
+                          const TextInputType.numberWithOptions(decimal: true)
+                  ? [FilteringTextInputFormatter.allow(RegExp(r'[0-9.]'))]
+                  : null,
           decoration: InputDecoration(
             prefixText: widget.prefix,
             prefixStyle: const TextStyle(

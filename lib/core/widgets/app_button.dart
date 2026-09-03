@@ -41,7 +41,8 @@ class AppButton extends StatelessWidget {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.emerald600,
               foregroundColor: Colors.white,
-              padding: padding ??
+              padding:
+                  padding ??
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -59,7 +60,8 @@ class AppButton extends StatelessWidget {
             style: OutlinedButton.styleFrom(
               foregroundColor: AppColors.gray700,
               backgroundColor: Colors.white,
-              padding: padding ??
+              padding:
+                  padding ??
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               side: const BorderSide(color: AppColors.gray200),
               shape: RoundedRectangleBorder(
@@ -73,9 +75,7 @@ class AppButton extends StatelessWidget {
         return IconButton(
           onPressed: onPressed,
           icon: icon ?? Text(label),
-          style: IconButton.styleFrom(
-            foregroundColor: AppColors.gray500,
-          ),
+          style: IconButton.styleFrom(foregroundColor: AppColors.gray500),
         );
     }
   }

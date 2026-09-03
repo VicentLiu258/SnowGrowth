@@ -40,6 +40,9 @@ class AppStrings {
   static const String unitConverter = 'Unit Converter';
   static const String unitDesc = 'Length, weight, temp';
   static const String noToolsFound = 'No tools found matching';
+  static const String icWebsiteTitle = 'IC Verification';
+  static const String websiteLookupFailed =
+      'Unable to open the IC website. Please try again.';
 
   // Percentage
   static const String percentage = 'Percentage';
@@ -84,6 +87,7 @@ class AppStrings {
 
   // Navigation
   static const String home = 'Home';
+  static const String back = 'Back';
 
   // Legal content
   static const String privacyContent = '''

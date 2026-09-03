@@ -1,12 +1,4 @@
-enum UnitCategory {
-  length,
-  weight,
-  temperature,
-  area,
-  volume,
-  speed,
-  data,
-}
+enum UnitCategory { length, weight, temperature, area, volume, speed, data }
 
 class UnitConverterData {
   static const Map<UnitCategory, List<String>> units = {
@@ -29,13 +21,7 @@ class UnitConverterData {
       'Ounce',
     ],
     UnitCategory.temperature: ['Celsius', 'Fahrenheit', 'Kelvin'],
-    UnitCategory.area: [
-      'SqMeter',
-      'SqKilometer',
-      'Hectare',
-      'Acre',
-      'SqFoot',
-    ],
+    UnitCategory.area: ['SqMeter', 'SqKilometer', 'Hectare', 'Acre', 'SqFoot'],
     UnitCategory.volume: ['Liter', 'Milliliter', 'CubicMeter', 'GallonUS'],
     UnitCategory.speed: ['MPS', 'KMPH', 'MPH', 'Knot'],
     UnitCategory.data: ['Byte', 'Kilobyte', 'Megabyte', 'Gigabyte', 'Terabyte'],

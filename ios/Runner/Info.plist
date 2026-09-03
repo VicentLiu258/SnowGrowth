@@ -47,6 +47,10 @@
 	<true/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>NSCameraUsageDescription</key>
+	<string>Snow Growth needs camera access to capture an ID photo for the verification website.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Snow Growth needs photo access so you can upload an ID photo to the verification website.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>

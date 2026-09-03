@@ -16,9 +16,6 @@ class DataExporter {
     final file = File('${dir.path}/$filename');
     await file.writeAsString(json);
 
-    await Share.shareXFiles(
-      [XFile(file.path)],
-      subject: filename,
-    );
+    await Share.shareXFiles([XFile(file.path)], subject: filename);
   }
 }

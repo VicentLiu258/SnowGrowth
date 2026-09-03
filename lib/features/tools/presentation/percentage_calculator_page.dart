@@ -28,11 +28,7 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
   String _y = '200';
   bool _loaded = false;
 
-  final _modes = const [
-    AppStrings.mode1,
-    AppStrings.mode2,
-    AppStrings.mode3,
-  ];
+  final _modes = const [AppStrings.mode1, AppStrings.mode2, AppStrings.mode3];
 
   @override
   void initState() {
@@ -109,16 +105,13 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
   }
 
   Future<void> _export() async {
-    await DataExporter.exportJson(
-      {
-        'tool': AppStrings.percentageCalculator,
-        'mode': _mode,
-        'valueX': _x,
-        'valueY': _y,
-        'result': _computeResult(),
-      },
-      'percentage_data.json',
-    );
+    await DataExporter.exportJson({
+      'tool': AppStrings.percentageCalculator,
+      'mode': _mode,
+      'valueX': _x,
+      'valueY': _y,
+      'result': _computeResult(),
+    }, 'percentage_data.json');
   }
 
   @override
@@ -167,24 +160,26 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: _mode == index
-                                    ? AppColors.emerald500
-                                    : AppColors.gray300,
+                                color:
+                                    _mode == index
+                                        ? AppColors.emerald500
+                                        : AppColors.gray300,
                                 width: 2,
                               ),
                             ),
-                            child: _mode == index
-                                ? Center(
-                                    child: Container(
-                                      width: 10,
-                                      height: 10,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: AppColors.emerald500,
+                            child:
+                                _mode == index
+                                    ? Center(
+                                      child: Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: const BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.emerald500,
+                                        ),
                                       ),
-                                    ),
-                                  )
-                                : null,
+                                    )
+                                    : null,
                           ),
                           const SizedBox(width: 12),
                           Expanded(
@@ -205,16 +200,18 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
                   label: AppStrings.valueX,
                   value: _x,
                   onChanged: _saveX,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 AppInput(
                   label: AppStrings.valueY,
                   value: _y,
                   onChanged: _saveY,
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
               ],
             ),

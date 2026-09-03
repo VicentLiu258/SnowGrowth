@@ -48,7 +48,8 @@ class _TipCalculatorPageState extends State<TipCalculatorPage> {
     });
   }
 
-  double get _billAmount => (double.tryParse(_bill) ?? 0).clamp(0, double.infinity);
+  double get _billAmount =>
+      (double.tryParse(_bill) ?? 0).clamp(0, double.infinity);
   int get _validSplit => _split < 1 ? 1 : _split;
   double get _tipAmount => _billAmount * (_tipPct / 100);
   double get _total => _billAmount + _tipAmount;
@@ -79,18 +80,15 @@ class _TipCalculatorPageState extends State<TipCalculatorPage> {
   }
 
   Future<void> _export() async {
-    await DataExporter.exportJson(
-      {
-        'tool': AppStrings.tipCalculator,
-        'billAmount': _billAmount,
-        'tipPercentage': _tipPct,
-        'splitBetween': _validSplit,
-        'totalTip': _tipAmount,
-        'totalBill': _total,
-        'perPerson': _perPerson,
-      },
-      'tip_calculator_data.json',
-    );
+    await DataExporter.exportJson({
+      'tool': AppStrings.tipCalculator,
+      'billAmount': _billAmount,
+      'tipPercentage': _tipPct,
+      'splitBetween': _validSplit,
+      'totalTip': _tipAmount,
+      'totalBill': _total,
+      'perPerson': _perPerson,
+    }, 'tip_calculator_data.json');
   }
 
   @override
@@ -121,8 +119,9 @@ class _TipCalculatorPageState extends State<TipCalculatorPage> {
                   value: _bill,
                   onChanged: _saveBill,
                   prefix: '\$ ',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
                 ),
                 const SizedBox(height: 24),
                 Row(
@@ -168,8 +167,9 @@ class _TipCalculatorPageState extends State<TipCalculatorPage> {
                       variant: AppButtonVariant.secondary,
                       label: '',
                       icon: const Icon(Icons.remove, size: 20),
-                      onPressed: () =>
-                          _saveSplit(_validSplit > 1 ? _validSplit - 1 : 1),
+                      onPressed:
+                          () =>
+                              _saveSplit(_validSplit > 1 ? _validSplit - 1 : 1),
                       padding: const EdgeInsets.all(12),
                     ),
                     const SizedBox(width: 16),

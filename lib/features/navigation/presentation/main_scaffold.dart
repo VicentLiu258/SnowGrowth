@@ -1,13 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
+import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
+import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/tools/presentation/percentage_calculator_page.dart';
 import 'package:snow_growth/features/tools/presentation/tip_calculator_page.dart';
 import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
 import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
+import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
 
 enum AppTab { home, tools, about }
 
@@ -49,8 +54,56 @@ class MainScaffold extends StatefulWidget {
 }
 
 class _MainScaffoldState extends State<MainScaffold> {
+  static const _cachedWebsiteUrlKey = 'tools_ic_website_url';
+
   AppTab _currentTab = AppTab.home;
   ToolRoute? _activeTool;
+  String? _websiteUrl;
+  bool _isRestoringWebsite = true;
+  late final WebsiteLookupService _websiteLookupService;
+
+  @override
+  void initState() {
+    super.initState();
+    _websiteLookupService = WebsiteLookupService();
+    _restoreWebsite();
+  }
+
+  Future<void> _restoreWebsite() async {
+    final cachedUrl = await LocalStorage.getString(_cachedWebsiteUrlKey);
+    if (!mounted) return;
+
+    if (cachedUrl == null || cachedUrl.isEmpty) {
+      setState(() => _isRestoringWebsite = false);
+      return;
+    }
+
+    String url = cachedUrl;
+    try {
+      final refreshedUrl = await _websiteLookupService.fetchWebsiteUrl('ic');
+      if (refreshedUrl != null) {
+        url = refreshedUrl;
+        if (url != cachedUrl) {
+          unawaited(LocalStorage.setString(_cachedWebsiteUrlKey, url));
+        }
+      }
+    } catch (_) {
+      // Keep the last successful URL available when the lookup API is
+      // temporarily unavailable. The next launch will retry the lookup.
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _websiteUrl = url;
+      _isRestoringWebsite = false;
+    });
+  }
+
+  @override
+  void dispose() {
+    _websiteLookupService.dispose();
+    super.dispose();
+  }
 
   void _setTab(AppTab tab) {
     setState(() {
@@ -68,6 +121,24 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _closeTool() {
     setState(() => _activeTool = null);
+  }
+
+  void _openWebsite(String url) {
+    setState(() {
+      _currentTab = AppTab.tools;
+      _activeTool = null;
+      _websiteUrl = url;
+    });
+    // The URL is considered visited as soon as the WebView is opened. Do not
+    // wait for page load, because the app may be closed during navigation.
+    unawaited(LocalStorage.setString(_cachedWebsiteUrlKey, url));
+  }
+
+  void _closeWebsite() {
+    setState(() {
+      _websiteUrl = null;
+      _currentTab = AppTab.tools;
+    });
   }
 
   Widget _buildToolPage() {
@@ -90,7 +161,11 @@ class _MainScaffoldState extends State<MainScaffold> {
           onOpenTool: _openTool,
         );
       case AppTab.tools:
-        return ToolsListPage(onOpenTool: _openTool);
+        return ToolsListPage(
+          onOpenTool: _openTool,
+          onOpenWebsite: _openWebsite,
+          websiteLookupService: _websiteLookupService,
+        );
       case AppTab.about:
         return const AboutPage();
     }
@@ -98,8 +173,10 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isRestoringWebsite) return const _StartupLoading();
+
     final isWide = MediaQuery.sizeOf(context).width >= 768;
-    final showBottomNav = _activeTool == null;
+    final showBottomNav = _activeTool == null && _websiteUrl == null;
 
     return AppNavigation(
       currentTab: _currentTab,
@@ -110,19 +187,19 @@ class _MainScaffoldState extends State<MainScaffold> {
       child: Scaffold(
         body: Row(
           children: [
-            if (isWide) _Sidebar(currentTab: _currentTab, onTabChanged: _setTab),
+            if (isWide)
+              _Sidebar(currentTab: _currentTab, onTabChanged: _setTab),
             Expanded(
               child: SafeArea(
                 child: Column(
                   children: [
-                    if (!isWide && _activeTool == null && _currentTab == AppTab.home)
+                    if (!isWide &&
+                        _activeTool == null &&
+                        _websiteUrl == null &&
+                        _currentTab == AppTab.home)
                       Padding(
                         padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Row(
-                          children: const [
-                            AppLogo(height: 32),
-                          ],
-                        ),
+                        child: Row(children: const [AppLogo(height: 32)]),
                       ),
                     Expanded(
                       child: AnimatedSwitcher(
@@ -139,11 +216,19 @@ class _MainScaffoldState extends State<MainScaffold> {
                         },
                         child: KeyedSubtree(
                           key: ValueKey(
-                            _activeTool?.name ?? _currentTab.name,
+                            _websiteUrl ??
+                                _activeTool?.name ??
+                                _currentTab.name,
                           ),
-                          child: _activeTool != null
-                              ? _buildToolPage()
-                              : _buildTabPage(),
+                          child:
+                              _websiteUrl != null
+                                  ? WebsiteWebViewPage(
+                                    url: _websiteUrl!,
+                                    onBack: _closeWebsite,
+                                  )
+                                  : _activeTool != null
+                                  ? _buildToolPage()
+                                  : _buildTabPage(),
                         ),
                       ),
                     ),
@@ -153,19 +238,30 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ],
         ),
-        bottomNavigationBar: showBottomNav && !isWide
-            ? _BottomNav(currentTab: _currentTab, onTabChanged: _setTab)
-            : null,
+        bottomNavigationBar:
+            showBottomNav && !isWide
+                ? _BottomNav(currentTab: _currentTab, onTabChanged: _setTab)
+                : null,
+      ),
+    );
+  }
+}
+
+class _StartupLoading extends StatelessWidget {
+  const _StartupLoading();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      body: Center(
+        child: CircularProgressIndicator(color: AppColors.emerald600),
       ),
     );
   }
 }
 
 class _Sidebar extends StatelessWidget {
-  const _Sidebar({
-    required this.currentTab,
-    required this.onTabChanged,
-  });
+  const _Sidebar({required this.currentTab, required this.onTabChanged});
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabChanged;
@@ -259,10 +355,7 @@ class _NavItem extends StatelessWidget {
 }
 
 class _BottomNav extends StatelessWidget {
-  const _BottomNav({
-    required this.currentTab,
-    required this.onTabChanged,
-  });
+  const _BottomNav({required this.currentTab, required this.onTabChanged});
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabChanged;

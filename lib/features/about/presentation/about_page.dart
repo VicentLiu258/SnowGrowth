@@ -12,10 +12,7 @@ class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
   Future<void> _launchEmail() async {
-    final uri = Uri(
-      scheme: 'mailto',
-      path: AppStrings.contactEmail,
-    );
+    final uri = Uri(scheme: 'mailto', path: AppStrings.contactEmail);
     if (await canLaunchUrl(uri)) {
       await launchUrl(uri);
     }
@@ -33,10 +30,10 @@ class AboutPage extends StatelessWidget {
             AppStrings.aboutDesc,
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.gray500,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
+              color: AppColors.gray500,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 32),
           Align(

@@ -52,10 +52,10 @@ class _HeroSection extends StatelessWidget {
           Text.rich(
             TextSpan(
               style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.gray900,
-                    height: 1.2,
-                  ),
+                fontWeight: FontWeight.bold,
+                color: AppColors.gray900,
+                height: 1.2,
+              ),
               children: const [
                 TextSpan(text: '${AppStrings.heroTitle}\n'),
                 TextSpan(
@@ -78,10 +78,10 @@ class _HeroSection extends StatelessWidget {
           Text(
             AppStrings.heroSubtitle,
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: AppColors.gray500,
-                  fontWeight: FontWeight.w500,
-                  height: 1.5,
-                ),
+              color: AppColors.gray500,
+              fontWeight: FontWeight.w500,
+              height: 1.5,
+            ),
           ),
           const SizedBox(height: 24),
           AppButton(
@@ -96,10 +96,7 @@ class _HeroSection extends StatelessWidget {
 }
 
 class _ToolsSection extends StatelessWidget {
-  const _ToolsSection({
-    required this.onOpenTools,
-    required this.onOpenTool,
-  });
+  const _ToolsSection({required this.onOpenTools, required this.onOpenTool});
 
   final VoidCallback onOpenTools;
   final ValueChanged<ToolRoute> onOpenTool;
@@ -184,10 +181,7 @@ class _ToolQuickCard extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
             ),
           ),
           const Icon(Icons.chevron_right, color: AppColors.gray300),
@@ -267,10 +261,7 @@ class _SolutionCard extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             title,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
           Text(
@@ -313,10 +304,7 @@ class _FeaturedCaseSection extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
-                Image.asset(
-                  'assets/case.webp',
-                  fit: BoxFit.cover,
-                ),
+                Image.asset('assets/case.webp', fit: BoxFit.cover),
                 Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(

@@ -18,10 +18,7 @@ class TopAlignedBody extends StatelessWidget {
       alignment: Alignment.topCenter,
       child: SingleChildScrollView(
         padding: padding,
-        child: SizedBox(
-          width: double.infinity,
-          child: child,
-        ),
+        child: SizedBox(width: double.infinity, child: child),
       ),
     );
   }
