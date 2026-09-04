@@ -24,7 +24,6 @@ class WebsiteWebViewPage extends StatefulWidget {
 
 class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
   late final WebViewController _controller;
-  int _loadingProgress = 0;
   DateTime? _lastBackPressTime;
 
   @override
@@ -40,9 +39,6 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
           ..setBackgroundColor(Colors.white)
           ..setNavigationDelegate(
             NavigationDelegate(
-              onProgress: (progress) {
-                if (mounted) setState(() => _loadingProgress = progress);
-              },
               onWebResourceError: (_) {
                 // Ignore transient resource errors to avoid terminating the webview
               },
@@ -137,7 +133,7 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
                   color: AppColors.emerald600,
                 ),
                 title: const Text(
-                  '拍照',
+                  AppStrings.takePhoto,
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
@@ -148,7 +144,7 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
                   color: AppColors.emerald600,
                 ),
                 title: const Text(
-                  '从相册选择',
+                  AppStrings.chooseFromGallery,
                   style: TextStyle(fontWeight: FontWeight.w500),
                 ),
                 onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
@@ -156,7 +152,7 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
               ListTile(
                 leading: const Icon(Icons.close, color: AppColors.gray400),
                 title: const Text(
-                  '取消',
+                  AppStrings.cancel,
                   style: TextStyle(color: AppColors.gray500),
                 ),
                 onTap: () => Navigator.of(ctx).pop(null),
@@ -231,24 +227,7 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
       },
       child: Scaffold(
         body: SafeArea(
-          child: Stack(
-            children: [
-              WebViewWidget(controller: _controller),
-              if (_loadingProgress < 100)
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: LinearProgressIndicator(
-                    value:
-                        _loadingProgress == 0 ? null : _loadingProgress / 100,
-                    minHeight: 2,
-                    color: AppColors.emerald600,
-                    backgroundColor: Colors.transparent,
-                  ),
-                ),
-            ],
-          ),
+          child: WebViewWidget(controller: _controller),
         ),
       ),
     );

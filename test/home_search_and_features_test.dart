@@ -208,6 +208,7 @@ void main() {
     // First back press: should show snackbar prompt and NOT pop app
     popScope.onPopInvokedWithResult?.call(false, null);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(find.text(AppStrings.pressBackAgainToExit), findsOneWidget);
     expect(systemPopCount, 0);
@@ -215,6 +216,7 @@ void main() {
     // Second back press within 1s: should call SystemNavigator.pop()
     popScope.onPopInvokedWithResult?.call(false, null);
     await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     expect(systemPopCount, 1);
   });
