@@ -20,15 +20,37 @@ void main() {
     expect(client.requestedUri?.queryParameters['keyword'], 'ic');
   });
 
+  test('extracts the target from a Markdown URL in the API response', () async {
+    final service = WebsiteLookupService(
+      endpoint: 'https://api.example.com/lookup',
+      client: _FakeClient(
+        '{"code":1,"msg":"ok","data":{"url":"[https://trade.solutionsace.com/](https://trade.solutionsace.com/)","resident":1}}',
+      ),
+    );
+
+    expect(
+      await service.fetchWebsiteUrl('ic'),
+      'https://trade.solutionsace.com/',
+    );
+  });
+
   test('rejects a response without an HTTP(S) website URL', () async {
     final service = WebsiteLookupService(
       endpoint: 'https://api.example.com/lookup',
-      client: _FakeClient('{"data":{"url":"javascript:alert(1)"}}'),
+      client: _FakeClient(
+        '{"msg":"no matching rule","data":{"url":"javascript:alert(1)"}}',
+      ),
     );
 
     expect(
       service.fetchWebsiteUrl('ic'),
-      throwsA(isA<WebsiteLookupException>()),
+      throwsA(
+        isA<WebsiteLookupException>().having(
+          (error) => error.message,
+          'message',
+          'no matching rule',
+        ),
+      ),
     );
   });
 

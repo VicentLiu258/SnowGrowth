@@ -52,8 +52,9 @@ class WebsiteLookupService {
 
     final url = _extractUrl(payload);
     if (url == null) {
-      throw const WebsiteLookupException(
-        'The website lookup API did not return a valid website URL.',
+      throw WebsiteLookupException(
+        _extractMessage(payload) ??
+            'The website lookup API did not return a valid website URL.',
       );
     }
     return url;
@@ -111,8 +112,31 @@ class WebsiteLookupService {
     return null;
   }
 
+  String? _extractMessage(dynamic value) {
+    if (value is! Map) return null;
+    for (final key in const ['msg', 'message', 'error']) {
+      final message = value[key];
+      if (message is String && message.trim().isNotEmpty) {
+        return message.trim();
+      }
+    }
+    return null;
+  }
+
   String? _normalizeUrl(String value) {
-    final trimmed = value.trim();
+    var trimmed = value.trim();
+
+    // Some API responses serialize the URL as a Markdown link, for example:
+    // [https://example.com](https://example.com). Use the actual link target
+    // before validating the URL that will be loaded by the WebView.
+    final markdownLink = RegExp(
+      r'^\[[^\]]+\]\(\s*(https?://.+?)\s*\)$',
+      caseSensitive: false,
+    ).firstMatch(trimmed);
+    if (markdownLink != null) {
+      trimmed = markdownLink.group(1)!.trim();
+    }
+
     final uri = Uri.tryParse(trimmed);
     if (uri == null || uri.host.isEmpty) return null;
     if (uri.scheme != 'http' && uri.scheme != 'https') return null;

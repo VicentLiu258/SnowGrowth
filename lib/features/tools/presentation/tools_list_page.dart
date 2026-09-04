@@ -103,11 +103,15 @@ class _ToolsListPageState extends State<ToolsListPage> {
 
       FocusManager.instance.primaryFocus?.unfocus();
       widget.onOpenWebsite(url);
-    } catch (_) {
+    } catch (error) {
       if (!mounted || requestId != _lookupRequestId) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(AppStrings.websiteLookupFailed)),
-      );
+      final message =
+          error is WebsiteLookupException
+              ? error.message
+              : AppStrings.websiteLookupFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted && requestId == _lookupRequestId) {
         setState(() => _isLookingUpWebsite = false);

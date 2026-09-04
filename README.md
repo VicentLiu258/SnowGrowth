@@ -10,15 +10,17 @@ the URL locally. On a later launch, the app refreshes the URL through the same
 API before opening the WebView; the last successful URL is used as a fallback
 when the API is temporarily unavailable.
 
-Configure the API when running or building the app:
+The production API is already configured. It can be overridden when running or
+building the app if another environment is needed:
 
 ```shell
 flutter run \
-  --dart-define=TOOLS_LOOKUP_API_URL=https://api.example.com/tools/url \
+  --dart-define=TOOLS_LOOKUP_API_URL=https://www.snowgrowth.com/index/jump/search \
   --dart-define=TOOLS_LOOKUP_QUERY_PARAMETER=keyword
 ```
 
-The default request is `GET <endpoint>?keyword=ic`. The response may be a URL
+The request is `GET https://www.snowgrowth.com/index/jump/search?keyword=ic`.
+The response may be a URL
 string or a JSON object containing `url`, `websiteUrl`, `href`, `link`, or a
 nested `data`/`result` object with one of those fields. An endpoint containing
 `{query}` is also supported, for example `https://api.example.com/url/{query}`.

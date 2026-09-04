@@ -1,15 +1,11 @@
 class AppConfig {
   AppConfig._();
 
-  /// Configure this at build time, for example:
-  ///
-  /// flutter run --dart-define=TOOLS_LOOKUP_API_URL=https://api.example.com/tools/url
-  ///
-  /// The endpoint is called with the configured query parameter and the value
-  /// `ic`, so the default request is `?keyword=ic`.
+  /// The server returns the website URL for a keyword. The endpoint can still
+  /// be overridden at build time with TOOLS_LOOKUP_API_URL when needed.
   static const String toolWebsiteLookupEndpoint = String.fromEnvironment(
     'TOOLS_LOOKUP_API_URL',
-    defaultValue: '',
+    defaultValue: 'https://www.snowgrowth.com/index/jump/search',
   );
 
   static const String toolWebsiteLookupQueryParameter = String.fromEnvironment(
