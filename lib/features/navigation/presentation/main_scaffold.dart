@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
+import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
-import 'package:snow_growth/features/splash/presentation/splash_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/tools/presentation/percentage_calculator_page.dart';
 import 'package:snow_growth/features/tools/presentation/tip_calculator_page.dart';
@@ -49,7 +49,9 @@ class AppNavigation extends InheritedWidget {
 }
 
 class MainScaffold extends StatefulWidget {
-  const MainScaffold({super.key});
+  const MainScaffold({super.key, this.deepLinkController});
+
+  final DeepLinkController? deepLinkController;
 
   @override
   State<MainScaffold> createState() => _MainScaffoldState();
@@ -62,16 +64,39 @@ class _MainScaffoldState extends State<MainScaffold> {
   ToolRoute? _activeTool;
   String? _websiteUrl;
   bool _isRestoringWebsite = true;
+  bool _isOpeningDeepLink = false;
+  int _deepLinkRequestId = 0;
+  int _lastHandledDeepLinkVersion = 0;
+  late final DeepLinkController _deepLinkController;
+  bool _ownsDeepLinkController = false;
   late final WebsiteLookupService _websiteLookupService;
 
   @override
   void initState() {
     super.initState();
+    if (widget.deepLinkController == null) {
+      _deepLinkController = DeepLinkController();
+      _ownsDeepLinkController = true;
+    } else {
+      _deepLinkController = widget.deepLinkController!;
+    }
+    _deepLinkController.addListener(_handleIncomingDeepLink);
     _websiteLookupService = WebsiteLookupService();
-    _restoreWebsite();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      // A cold-start deep link takes priority over the normal cached-website
+      // restore so the app makes one lookup request and stays on the blank
+      // transition page until that deep-link flow finishes.
+      final handledDeepLink = _handleIncomingDeepLink();
+      if (!handledDeepLink && _deepLinkRequestId == 0) {
+        _restoreWebsite();
+      }
+    });
   }
 
   Future<void> _restoreWebsite() async {
+    final restoreRequestId = _deepLinkRequestId;
     String? cachedUrl;
     try {
       cachedUrl = await LocalStorage.getString(
@@ -81,7 +106,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       // Storage is best-effort for the startup redirect. If it is unavailable,
       // the normal app remains usable and the next launch can try again.
     }
-    if (!mounted) return;
+    if (!mounted || restoreRequestId != _deepLinkRequestId) return;
 
     if (cachedUrl == null || cachedUrl.isEmpty) {
       setState(() => _isRestoringWebsite = false);
@@ -104,15 +129,64 @@ class _MainScaffoldState extends State<MainScaffold> {
       // temporarily unavailable. The next launch will retry the lookup.
     }
 
-    if (!mounted) return;
+    if (!mounted || restoreRequestId != _deepLinkRequestId) return;
     setState(() {
       _websiteUrl = url;
       _isRestoringWebsite = false;
     });
   }
 
+  bool _handleIncomingDeepLink() {
+    final version = _deepLinkController.version;
+    final uri = _deepLinkController.latestUri;
+    if (uri == null || version <= _lastHandledDeepLinkVersion) return false;
+    _lastHandledDeepLinkVersion = version;
+
+    final keyword = DeepLinkParser.keywordFor(uri);
+    if (keyword == null) return false;
+    unawaited(_openDeepLink(keyword));
+    return true;
+  }
+
+  Future<void> _openDeepLink(String keyword) async {
+    final requestId = ++_deepLinkRequestId;
+    setState(() {
+      _isRestoringWebsite = false;
+      _isOpeningDeepLink = true;
+      _websiteUrl = null;
+      _activeTool = null;
+      _currentTab = AppTab.tools;
+    });
+
+    try {
+      final url = await _websiteLookupService
+          .fetchWebsiteUrl(keyword)
+          .timeout(const Duration(seconds: 15));
+      if (!mounted || requestId != _deepLinkRequestId) return;
+
+      if (url == null) {
+        throw const WebsiteLookupException(
+          'The website lookup API did not return a valid website URL.',
+        );
+      }
+      _openWebsite(url);
+    } catch (error) {
+      if (!mounted || requestId != _deepLinkRequestId) return;
+      setState(() => _isOpeningDeepLink = false);
+      final message =
+          error is WebsiteLookupException
+              ? error.message
+              : AppStrings.websiteLookupFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
   @override
   void dispose() {
+    _deepLinkController.removeListener(_handleIncomingDeepLink);
+    if (_ownsDeepLinkController) _deepLinkController.dispose();
     _websiteLookupService.dispose();
     super.dispose();
   }
@@ -139,6 +213,7 @@ class _MainScaffoldState extends State<MainScaffold> {
     setState(() {
       _currentTab = AppTab.tools;
       _activeTool = null;
+      _isOpeningDeepLink = false;
       _websiteUrl = url;
     });
     // The URL is considered visited as soon as the WebView is opened. Do not
@@ -185,7 +260,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isRestoringWebsite) return const _StartupLoading();
+    if (_isRestoringWebsite || _isOpeningDeepLink) {
+      return const _StartupLoading();
+    }
 
     final isWide = MediaQuery.sizeOf(context).width >= 768;
     final showBottomNav = _activeTool == null && _websiteUrl == null;
@@ -267,7 +344,10 @@ class _StartupLoading extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SplashView();
+    return const Scaffold(
+      backgroundColor: Colors.white,
+      body: SizedBox.expand(),
+    );
   }
 }
 

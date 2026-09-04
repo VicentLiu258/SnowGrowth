@@ -15,6 +15,16 @@ class AppConfig {
 
   static const String toolWebsiteTrigger = 'ic';
 
+  static const String deepLinkScheme = 'snowgrowth';
+  static const String deepLinkHost = 'open';
+  static const String deepLinkPathSegment = 'open';
+  static const List<String> deepLinkWebHosts = [
+    'www.snowgrowth.com',
+    'snowgrowth.com',
+  ];
+  static const String deepLinkPublicUrl = 'https://www.snowgrowth.com/open/ic';
+  static const String deepLinkCustomUrl = 'snowgrowth://open/ic';
+
   static const String privacyPolicyUrl =
       'https://www.snowgrowth.com/legal/privacy-policy';
   static const String termsOfUseUrl =

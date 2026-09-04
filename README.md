@@ -25,6 +25,27 @@ string or a JSON object containing `url`, `websiteUrl`, `href`, `link`, or a
 nested `data`/`result` object with one of those fields. An endpoint containing
 `{query}` is also supported, for example `https://api.example.com/url/{query}`.
 
+## External deep link
+
+The unified mobile deep link is:
+
+```text
+https://www.snowgrowth.com/open/ic
+```
+
+When the app is installed, Android App Links or iOS Universal Links open the
+app on a blank transition page. The app then calls the same IC lookup API and
+opens the returned URL in the WebView. The custom-scheme fallback is:
+
+```text
+snowgrowth://open/ic
+```
+
+Platform association files and H5/WhatsApp usage examples are in
+[`docs/deep_link/README.md`](docs/deep_link/README.md). The Android release
+certificate fingerprint and Apple Developer Team ID must be filled in on the
+server before HTTPS links can be verified by the operating systems.
+
 ## Getting Started
 
 This project is a starting point for a Flutter application.
