@@ -87,6 +87,7 @@ class AppStrings {
   // Navigation
   static const String home = 'Home';
   static const String back = 'Back';
+  static const String pressBackAgainToExit = '再按一次退出应用';
 
   // Legal content
   static const String riskContent = '''

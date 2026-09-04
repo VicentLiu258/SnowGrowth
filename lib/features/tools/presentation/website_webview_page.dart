@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
+import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -23,6 +25,7 @@ class WebsiteWebViewPage extends StatefulWidget {
 class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
   late final WebViewController _controller;
   int _loadingProgress = 0;
+  DateTime? _lastBackPressTime;
 
   @override
   void initState() {
@@ -194,9 +197,29 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
     try {
       if (await _controller.canGoBack()) {
         await _controller.goBack();
+        _lastBackPressTime = null;
+        return;
       }
     } catch (_) {}
-    // Do NOT navigate back to native Flutter UI ("不可返回").
+
+    final now = DateTime.now();
+    if (_lastBackPressTime != null &&
+        now.difference(_lastBackPressTime!) <= const Duration(seconds: 1)) {
+      await SystemNavigator.pop();
+      return;
+    }
+
+    _lastBackPressTime = now;
+    if (mounted) {
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.pressBackAgainToExit),
+          duration: Duration(seconds: 1),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
   }
 
   @override
