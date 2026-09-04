@@ -71,6 +71,10 @@
 	<string>Snow Growth needs camera access to capture an ID photo for the verification website.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Snow Growth needs photo access so you can upload an ID photo to the verification website.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Snow Growth needs microphone access for video verification.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Snow Growth needs permission to save photos to your library.</string>
 	<key>LSApplicationQueriesSchemes</key>
 	<array>
 		<string>mailto</string>

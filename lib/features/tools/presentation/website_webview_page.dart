@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
-import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -11,11 +10,11 @@ class WebsiteWebViewPage extends StatefulWidget {
   const WebsiteWebViewPage({
     super.key,
     required this.url,
-    required this.onBack,
+    this.onBack,
   });
 
   final String url;
-  final VoidCallback onBack;
+  final VoidCallback? onBack;
 
   @override
   State<WebsiteWebViewPage> createState() => _WebsiteWebViewPageState();
@@ -41,11 +40,17 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
               onProgress: (progress) {
                 if (mounted) setState(() => _loadingProgress = progress);
               },
+              onWebResourceError: (_) {
+                // Ignore transient resource errors to avoid terminating the webview
+              },
             ),
           );
 
     final platformController = _controller.platform;
     if (platformController is AndroidWebViewController) {
+      try {
+        platformController.setMediaPlaybackRequiresUserGesture(false);
+      } catch (_) {}
       unawaited(_configureFileSelector(platformController));
     }
 
@@ -59,12 +64,12 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
   Future<void> _resolvePermissionRequest(
     WebViewPermissionRequest request,
   ) async {
-    final canGrant = request.types.every(
-      (type) =>
-          type == WebViewPermissionResourceType.camera ||
-          type == WebViewPermissionResourceType.microphone,
-    );
     try {
+      final canGrant = request.types.every(
+        (type) =>
+            type == WebViewPermissionResourceType.camera ||
+            type == WebViewPermissionResourceType.microphone,
+      );
       if (canGrant) {
         await request.grant();
       } else {
@@ -107,10 +112,60 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
         return files.map((file) => Uri.file(file.path).toString()).toList();
       }
 
-      final image = await picker.pickImage(
-        source:
-            params.isCaptureEnabled ? ImageSource.camera : ImageSource.gallery,
+      if (params.isCaptureEnabled) {
+        final image = await picker.pickImage(source: ImageSource.camera);
+        return image == null ? const [] : [Uri.file(image.path).toString()];
+      }
+
+      // If capture is not specifically forced, provide choice between camera & gallery
+      if (!mounted) return const [];
+      final source = await showModalBottomSheet<ImageSource>(
+        context: context,
+        backgroundColor: Colors.white,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+        ),
+        builder: (ctx) => SafeArea(
+          child: Wrap(
+            children: [
+              ListTile(
+                leading: const Icon(
+                  Icons.camera_alt_outlined,
+                  color: AppColors.emerald600,
+                ),
+                title: const Text(
+                  '拍照',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(
+                  Icons.photo_library_outlined,
+                  color: AppColors.emerald600,
+                ),
+                title: const Text(
+                  '从相册选择',
+                  style: TextStyle(fontWeight: FontWeight.w500),
+                ),
+                onTap: () => Navigator.of(ctx).pop(ImageSource.gallery),
+              ),
+              ListTile(
+                leading: const Icon(Icons.close, color: AppColors.gray400),
+                title: const Text(
+                  '取消',
+                  style: TextStyle(color: AppColors.gray500),
+                ),
+                onTap: () => Navigator.of(ctx).pop(null),
+              ),
+            ],
+          ),
+        ),
       );
+
+      if (source == null) return const [];
+
+      final image = await picker.pickImage(source: source);
       return image == null ? const [] : [Uri.file(image.path).toString()];
     } catch (_) {
       // Returning an empty list cancels the chooser cleanly instead of making
@@ -123,12 +178,15 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
     if (params.acceptTypes.isEmpty) return true;
     return params.acceptTypes.any((type) {
       final normalized = type.toLowerCase().trim();
-      return normalized.startsWith('image/') ||
+      return normalized.isEmpty ||
+          normalized == '*/*' ||
+          normalized.startsWith('image/') ||
           normalized.endsWith('.jpg') ||
           normalized.endsWith('.jpeg') ||
           normalized.endsWith('.png') ||
           normalized.endsWith('.heic') ||
-          normalized.endsWith('.webp');
+          normalized.endsWith('.webp') ||
+          normalized.endsWith('.pdf');
     });
   }
 
@@ -136,12 +194,9 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
     try {
       if (await _controller.canGoBack()) {
         await _controller.goBack();
-        return;
       }
-    } catch (_) {
-      // Fall through to the app-level back action if the WebView is not ready.
-    }
-    widget.onBack();
+    } catch (_) {}
+    // Do NOT navigate back to native Flutter UI ("不可返回").
   }
 
   @override
@@ -152,28 +207,26 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
         if (!didPop) unawaited(_handleSystemBack());
       },
       child: Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            tooltip: AppStrings.back,
-            onPressed: _handleSystemBack,
-            icon: const Icon(Icons.arrow_back),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              WebViewWidget(controller: _controller),
+              if (_loadingProgress < 100)
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: LinearProgressIndicator(
+                    value:
+                        _loadingProgress == 0 ? null : _loadingProgress / 100,
+                    minHeight: 2,
+                    color: AppColors.emerald600,
+                    backgroundColor: Colors.transparent,
+                  ),
+                ),
+            ],
           ),
-          title: const Text(AppStrings.icWebsiteTitle),
-          bottom:
-              _loadingProgress < 100
-                  ? PreferredSize(
-                    preferredSize: const Size.fromHeight(2),
-                    child: LinearProgressIndicator(
-                      value:
-                          _loadingProgress == 0 ? null : _loadingProgress / 100,
-                      minHeight: 2,
-                      color: AppColors.emerald600,
-                      backgroundColor: AppColors.gray100,
-                    ),
-                  )
-                  : null,
         ),
-        body: WebViewWidget(controller: _controller),
       ),
     );
   }

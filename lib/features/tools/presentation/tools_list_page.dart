@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/top_aligned_body.dart';
-import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 
 class ToolItem {
@@ -47,86 +45,22 @@ const List<ToolItem> allTools = [
   ),
 ];
 
-class ToolsListPage extends StatefulWidget {
+class ToolsListPage extends StatelessWidget {
   const ToolsListPage({
     super.key,
     required this.onOpenTool,
-    required this.onOpenWebsite,
-    required this.websiteLookupService,
   });
 
   final ValueChanged<ToolRoute> onOpenTool;
-  final ValueChanged<String> onOpenWebsite;
-  final WebsiteLookupService websiteLookupService;
-
-  @override
-  State<ToolsListPage> createState() => _ToolsListPageState();
-}
-
-class _ToolsListPageState extends State<ToolsListPage> {
-  String _searchQuery = '';
-  int _lookupRequestId = 0;
-  bool _isLookingUpWebsite = false;
-
-  List<ToolItem> get _filteredTools {
-    if (_searchQuery.isEmpty) return allTools;
-    final query = _searchQuery.toLowerCase();
-    return allTools
-        .where(
-          (tool) =>
-              tool.name.toLowerCase().contains(query) ||
-              tool.description.toLowerCase().contains(query),
-        )
-        .toList();
-  }
-
-  void _onSearchChanged(String value) {
-    final query = value.trim().toLowerCase();
-    final shouldLookup = query == AppConfig.toolWebsiteTrigger;
-    final requestId = ++_lookupRequestId;
-
-    setState(() {
-      _searchQuery = value;
-      _isLookingUpWebsite = shouldLookup;
-    });
-
-    if (shouldLookup) {
-      _lookupWebsite(query, requestId);
-    }
-  }
-
-  Future<void> _lookupWebsite(String query, int requestId) async {
-    try {
-      final url = await widget.websiteLookupService.fetchWebsiteUrl(query);
-      if (!mounted || requestId != _lookupRequestId) return;
-      if (url == null) return;
-
-      FocusManager.instance.primaryFocus?.unfocus();
-      widget.onOpenWebsite(url);
-    } catch (error) {
-      if (!mounted || requestId != _lookupRequestId) return;
-      final message =
-          error is WebsiteLookupException
-              ? error.message
-              : AppStrings.websiteLookupFailed;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
-    } finally {
-      if (mounted && requestId == _lookupRequestId) {
-        setState(() => _isLookingUpWebsite = false);
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
     final calculators =
-        _filteredTools
+        allTools
             .where((t) => t.category == AppStrings.calculators)
             .toList();
     final converters =
-        _filteredTools
+        allTools
             .where((t) => t.category == AppStrings.converters)
             .toList();
 
@@ -140,18 +74,6 @@ class _ToolsListPageState extends State<ToolsListPage> {
               context,
             ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
           ),
-          const SizedBox(height: 24),
-          TextField(
-            onChanged: _onSearchChanged,
-            decoration: InputDecoration(
-              hintText: AppStrings.searchTools,
-              prefixIcon: const Icon(Icons.search, color: AppColors.gray400),
-            ),
-          ),
-          if (_isLookingUpWebsite) ...[
-            const SizedBox(height: 8),
-            const LinearProgressIndicator(minHeight: 2),
-          ],
           const SizedBox(height: 32),
           if (calculators.isNotEmpty) ...[
             _SectionHeader(title: AppStrings.calculators),
@@ -161,12 +83,13 @@ class _ToolsListPageState extends State<ToolsListPage> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _ToolCard(
                   tool: tool,
-                  onTap: () => widget.onOpenTool(tool.route),
+                  onTap: () => onOpenTool(tool.route),
                 ),
               ),
             ),
           ],
           if (converters.isNotEmpty) ...[
+            const SizedBox(height: 20),
             _SectionHeader(title: AppStrings.converters),
             const SizedBox(height: 16),
             ...converters.map(
@@ -174,24 +97,11 @@ class _ToolsListPageState extends State<ToolsListPage> {
                 padding: const EdgeInsets.only(bottom: 12),
                 child: _ToolCard(
                   tool: tool,
-                  onTap: () => widget.onOpenTool(tool.route),
+                  onTap: () => onOpenTool(tool.route),
                 ),
               ),
             ),
           ],
-          if (_filteredTools.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 40),
-              child: Center(
-                child: Text(
-                  '${AppStrings.noToolsFound} "$_searchQuery".',
-                  style: const TextStyle(
-                    color: AppColors.gray500,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

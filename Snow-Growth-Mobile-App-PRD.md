@@ -250,7 +250,7 @@
 +--------------------------------------+
 | CONTACT                              |
 | [ Request a Growth Audit        ]    |
-| hello@snowgrowth.com                 |
+| support@snowgrowth.com               |
 +--------------------------------------+
 | LEGAL                                |
 | Utility tools for reference only.    |

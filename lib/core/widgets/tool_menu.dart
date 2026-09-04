@@ -3,10 +3,10 @@ import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 
 class ToolMenu extends StatelessWidget {
-  const ToolMenu({super.key, required this.onClear, required this.onExport});
+  const ToolMenu({super.key, required this.onClear, this.onExport});
 
   final VoidCallback onClear;
-  final VoidCallback onExport;
+  final VoidCallback? onExport;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +15,7 @@ class ToolMenu extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       onSelected: (value) {
         if (value == 'clear') onClear();
-        if (value == 'export') onExport();
+        if (value == 'export' && onExport != null) onExport!();
       },
       itemBuilder:
           (context) => [
@@ -35,19 +35,6 @@ class ToolMenu extends StatelessWidget {
                       color: Colors.red.shade600,
                       fontWeight: FontWeight.w500,
                     ),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuItem(
-              value: 'export',
-              child: Row(
-                children: [
-                  const Icon(Icons.download_outlined, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    AppStrings.exportData,
-                    style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
                 ],
               ),
@@ -90,8 +77,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
               : null,
       title: Text(title),
       actions: [
-        if (showMenu && onClear != null && onExport != null)
-          ToolMenu(onClear: onClear!, onExport: onExport!),
+        if (showMenu && onClear != null)
+          ToolMenu(onClear: onClear!, onExport: onExport),
       ],
     );
   }

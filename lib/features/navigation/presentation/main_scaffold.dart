@@ -211,7 +211,6 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   void _openWebsite(String url) {
     setState(() {
-      _currentTab = AppTab.tools;
       _activeTool = null;
       _isOpeningDeepLink = false;
       _websiteUrl = url;
@@ -224,7 +223,6 @@ class _MainScaffoldState extends State<MainScaffold> {
   void _closeWebsite() {
     setState(() {
       _websiteUrl = null;
-      _currentTab = AppTab.tools;
     });
   }
 
@@ -246,12 +244,12 @@ class _MainScaffoldState extends State<MainScaffold> {
           onOpenTools: () => _setTab(AppTab.tools),
           onOpenAbout: () => _setTab(AppTab.about),
           onOpenTool: _openTool,
+          onOpenWebsite: _openWebsite,
+          websiteLookupService: _websiteLookupService,
         );
       case AppTab.tools:
         return ToolsListPage(
           onOpenTool: _openTool,
-          onOpenWebsite: _openWebsite,
-          websiteLookupService: _websiteLookupService,
         );
       case AppTab.about:
         return const AboutPage();
@@ -278,10 +276,11 @@ class _MainScaffoldState extends State<MainScaffold> {
         extendBodyBehindAppBar: true,
         body: Row(
           children: [
-            if (isWide)
+            if (isWide && _websiteUrl == null)
               _Sidebar(currentTab: _currentTab, onTabChanged: _setTab),
             Expanded(
               child: SafeArea(
+                top: _websiteUrl == null,
                 bottom: false,
                 child: Column(
                   children: [

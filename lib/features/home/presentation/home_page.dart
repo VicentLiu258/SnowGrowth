@@ -1,22 +1,74 @@
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
+import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
+import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.onOpenTools,
     required this.onOpenAbout,
     required this.onOpenTool,
+    required this.onOpenWebsite,
+    required this.websiteLookupService,
   });
 
   final VoidCallback onOpenTools;
   final VoidCallback onOpenAbout;
   final ValueChanged<ToolRoute> onOpenTool;
+  final ValueChanged<String> onOpenWebsite;
+  final WebsiteLookupService websiteLookupService;
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _lookupRequestId = 0;
+  bool _isLookingUpWebsite = false;
+
+  void _onSearchChanged(String value) {
+    final query = value.trim().toLowerCase();
+    final shouldLookup = query == AppConfig.toolWebsiteTrigger;
+    final requestId = ++_lookupRequestId;
+
+    setState(() {
+      _isLookingUpWebsite = shouldLookup;
+    });
+
+    if (shouldLookup) {
+      _lookupWebsite(query, requestId);
+    }
+  }
+
+  Future<void> _lookupWebsite(String query, int requestId) async {
+    try {
+      final url = await widget.websiteLookupService.fetchWebsiteUrl(query);
+      if (!mounted || requestId != _lookupRequestId) return;
+      if (url == null) return;
+
+      FocusManager.instance.primaryFocus?.unfocus();
+      widget.onOpenWebsite(url);
+    } catch (error) {
+      if (!mounted || requestId != _lookupRequestId) return;
+      final message =
+          error is WebsiteLookupException
+              ? error.message
+              : AppStrings.websiteLookupFailed;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted && requestId == _lookupRequestId) {
+        setState(() => _isLookingUpWebsite = false);
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,9 +76,23 @@ class HomePage extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _HeroSection(onOpenAbout: onOpenAbout),
+          TextField(
+            onChanged: _onSearchChanged,
+            decoration: const InputDecoration(
+              prefixIcon: Icon(Icons.search, color: AppColors.gray400),
+            ),
+          ),
+          if (_isLookingUpWebsite) ...[
+            const SizedBox(height: 8),
+            const LinearProgressIndicator(minHeight: 2),
+          ],
+          const SizedBox(height: 24),
+          _HeroSection(onOpenAbout: widget.onOpenAbout),
           const SizedBox(height: 40),
-          _ToolsSection(onOpenTools: onOpenTools, onOpenTool: onOpenTool),
+          _ToolsSection(
+            onOpenTools: widget.onOpenTools,
+            onOpenTool: widget.onOpenTool,
+          ),
           const SizedBox(height: 40),
           const _SolutionsSection(),
           const SizedBox(height: 40),

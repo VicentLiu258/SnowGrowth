@@ -79,7 +79,7 @@ class AppStrings {
   static const String termsOfService = 'Terms of Use';
   static const String riskDisclosure = 'Risk Disclosure';
   static const String copyright = '© 2026 Snow Growth. All rights reserved.';
-  static const String contactEmail = 'hello@snowgrowth.com';
+  static const String contactEmail = 'support@snowgrowth.com';
   static const String linkOpenFailed = 'Unable to open this link right now.';
   static const String clearData = 'Clear Data';
   static const String exportData = 'Export Data';
@@ -98,7 +98,7 @@ They do not constitute financial, investment, tax, or marketing advice.
 
 Always consult qualified professionals before making financial decisions.
 
-Contact: hello@snowgrowth.com
+Contact: support@snowgrowth.com
 
 Last updated: 2026.
 ''';
