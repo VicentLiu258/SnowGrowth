@@ -30,3 +30,6 @@ doc/api/
 
 /dist_packages
 .history/
+# Android release signing (never commit)
+android/key.properties
+android/keystore/
