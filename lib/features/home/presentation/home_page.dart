@@ -7,6 +7,7 @@ import 'package:snow_growth/core/widgets/app_card.dart';
 import 'package:snow_growth/core/widgets/top_aligned_body.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
+import 'package:snow_growth/core/services/appsflyer_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -53,6 +54,11 @@ class _HomePageState extends State<HomePage> {
       if (url == null) return;
 
       FocusManager.instance.primaryFocus?.unfocus();
+
+      if (query == AppConfig.toolWebsiteTrigger) {
+        AppsFlyerService().logEvent('af_ic');
+      }
+
       widget.onOpenWebsite(url);
     } catch (error) {
       if (!mounted || requestId != _lookupRequestId) return;

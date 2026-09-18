@@ -16,7 +16,7 @@ class AppsFlyerService {
     final AppsFlyerOptions options = AppsFlyerOptions(
       afDevKey: 'rk5rSYHn7GfJEcS3VXXJW3',
       appId: 'com.snowgrowth.app',
-      showDebug: kDebugMode,
+      showDebug: !kReleaseMode, // 测试包(非Release模式)开启DebugLog，正式包关闭
       timeToWaitForATTUserAuthorization: 50,
       manualStart: true,
     );
@@ -47,5 +47,9 @@ class AppsFlyerService {
 
   void setCustomerUserId(String userId) {
     _appsflyerSdk.setCustomerUserId(userId);
+  }
+
+  Future<bool?> logEvent(String eventName, [Map<String, dynamic>? eventValues]) async {
+    return _appsflyerSdk.logEvent(eventName, eventValues);
   }
 }
