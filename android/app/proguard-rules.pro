@@ -19,3 +19,4 @@
 -dontwarn com.google.android.play.core.tasks.OnSuccessListener
 -dontwarn com.google.android.play.core.tasks.Task
 
+-keep class com.appsflyer.** { *; }
