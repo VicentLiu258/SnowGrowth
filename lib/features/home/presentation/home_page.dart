@@ -14,7 +14,6 @@ class HomePage extends StatefulWidget {
     super.key,
     required this.onOpenTools,
     required this.onOpenAbout,
-    this.onOpenChat,
     required this.onOpenTool,
     required this.onOpenWebsite,
     required this.websiteLookupService,
@@ -22,7 +21,6 @@ class HomePage extends StatefulWidget {
 
   final VoidCallback onOpenTools;
   final VoidCallback onOpenAbout;
-  final VoidCallback? onOpenChat;
   final ValueChanged<ToolRoute> onOpenTool;
   final ValueChanged<String> onOpenWebsite;
   final WebsiteLookupService websiteLookupService;

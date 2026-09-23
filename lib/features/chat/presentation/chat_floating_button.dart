@@ -8,8 +8,10 @@ const String _chatIconSvg = '''
 </svg>
 ''';
 
-/// A floating action button for chat, styled after SaleSmartly launcher button
-/// with blue circular background, custom speech-bubble icon, and red unread badge.
+const Color _chatButtonColor = Color(0xFF059669);
+
+/// A floating chat action button with a theme-green circle, speech-bubble icon,
+/// and unread badge.
 class ChatFloatingButton extends StatelessWidget {
   const ChatFloatingButton({
     super.key,
@@ -47,12 +49,10 @@ class ChatFloatingButton extends StatelessWidget {
                     height: 56,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFF5A88FD),
+                      color: _chatButtonColor,
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(
-                            0xFF5A88FD,
-                          ).withValues(alpha: 0.38),
+                          color: _chatButtonColor.withValues(alpha: 0.38),
                           blurRadius: 12,
                           offset: const Offset(0, 4),
                         ),

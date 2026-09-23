@@ -18,7 +18,7 @@ import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
 import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
 import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
 
-enum AppTab { home, tools, chat, about }
+enum AppTab { home, tools, about }
 
 enum ToolRoute { percentage, unit, tip }
 
@@ -200,6 +200,60 @@ class _MainScaffoldState extends State<MainScaffold> {
     });
   }
 
+  Future<void> _openChat() async {
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.white,
+      barrierColor: Colors.black54,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      builder: (sheetContext) {
+        return FractionallySizedBox(
+          heightFactor: 1,
+          child: Column(
+            children: [
+              SizedBox(
+                height: 56,
+                child: Row(
+                  children: [
+                    const SizedBox(width: 56),
+                    Expanded(
+                      child: Center(
+                        child: Text(
+                          AppStrings.chat,
+                          style: const TextStyle(
+                            color: AppColors.gray900,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: 56,
+                      child: IconButton(
+                        tooltip: AppStrings.closeChat,
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close),
+                        color: AppColors.gray600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1, color: AppColors.gray100),
+              const Expanded(child: ChatPage()),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _openTool(ToolRoute tool) {
     setState(() {
       _currentTab = AppTab.tools;
@@ -245,15 +299,12 @@ class _MainScaffoldState extends State<MainScaffold> {
         return HomePage(
           onOpenTools: () => _setTab(AppTab.tools),
           onOpenAbout: () => _setTab(AppTab.about),
-          onOpenChat: () => _setTab(AppTab.chat),
           onOpenTool: _openTool,
           onOpenWebsite: _openWebsite,
           websiteLookupService: _websiteLookupService,
         );
       case AppTab.tools:
         return ToolsListPage(onOpenTool: _openTool);
-      case AppTab.chat:
-        return const ChatPage();
       case AppTab.about:
         return const AboutPage();
     }
@@ -308,32 +359,21 @@ class _MainScaffoldState extends State<MainScaffold> {
                             ],
                           );
                         },
-                        child: Padding(
-                          padding: EdgeInsets.only(
-                            bottom:
-                                !isWide &&
-                                        _websiteUrl == null &&
-                                        _activeTool == null &&
-                                        _currentTab == AppTab.chat
-                                    ? 64 + MediaQuery.paddingOf(context).bottom
-                                    : 0,
+                        child: KeyedSubtree(
+                          key: ValueKey(
+                            _websiteUrl ??
+                                _activeTool?.name ??
+                                _currentTab.name,
                           ),
-                          child: KeyedSubtree(
-                            key: ValueKey(
-                              _websiteUrl ??
-                                  _activeTool?.name ??
-                                  _currentTab.name,
-                            ),
-                            child:
-                                _websiteUrl != null
-                                    ? WebsiteWebViewPage(
-                                      url: _websiteUrl!,
-                                      onBack: _closeWebsite,
-                                    )
-                                    : _activeTool != null
-                                    ? _buildToolPage()
-                                    : _buildTabPage(),
-                          ),
+                          child:
+                              _websiteUrl != null
+                                  ? WebsiteWebViewPage(
+                                    url: _websiteUrl!,
+                                    onBack: _closeWebsite,
+                                  )
+                                  : _activeTool != null
+                                  ? _buildToolPage()
+                                  : _buildTabPage(),
                         ),
                       ),
                     ),
@@ -344,11 +384,10 @@ class _MainScaffoldState extends State<MainScaffold> {
           ],
         ),
         floatingActionButton:
-            !isWide &&
-                    _activeTool == null &&
+            _activeTool == null &&
                     _websiteUrl == null &&
                     _currentTab == AppTab.home
-                ? ChatFloatingButton(onTap: () => _setTab(AppTab.chat))
+                ? ChatFloatingButton(onTap: _openChat)
                 : null,
         bottomNavigationBar:
             showBottomNav && !isWide
@@ -411,13 +450,6 @@ class _Sidebar extends StatelessWidget {
             label: AppStrings.tools,
             selected: currentTab == AppTab.tools,
             onTap: () => onTabChanged(AppTab.tools),
-          ),
-          const SizedBox(height: 8),
-          _NavItem(
-            icon: Icons.chat_outlined,
-            label: AppStrings.chat,
-            selected: currentTab == AppTab.chat,
-            onTap: () => onTabChanged(AppTab.chat),
           ),
           const SizedBox(height: 8),
           _NavItem(
@@ -510,12 +542,6 @@ class _BottomNav extends StatelessWidget {
             label: AppStrings.tools,
             selected: currentTab == AppTab.tools,
             onTap: () => onTabChanged(AppTab.tools),
-          ),
-          _BottomNavItem(
-            icon: Icons.chat_outlined,
-            label: AppStrings.chat,
-            selected: currentTab == AppTab.chat,
-            onTap: () => onTabChanged(AppTab.chat),
           ),
           _BottomNavItem(
             icon: Icons.info_outline,

@@ -86,6 +86,7 @@ class AppStrings {
 
   // Chat
   static const String chat = 'Chat';
+  static const String closeChat = 'Close chat';
 
   // Navigation
   static const String home = 'Home';
