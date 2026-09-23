@@ -81,6 +81,18 @@
                 window.ssq.push('onReceiveMessage', function () {
                     reportStage('agent-message-received');
                 });
+                window.ssq.push('onCloseChat', function () {
+                    reportStage('chat-closed');
+                });
+                // Use the native sheet's close button so there is only one
+                // visible close control in the app.
+                window.ssq.push('hideCloseIcon', function (result) {
+                    reportStage(
+                        result && result.status === 'success'
+                            ? 'sdk-close-icon-hidden'
+                            : 'sdk-close-icon-hide-failed'
+                    );
+                });
                 window.ssq.push('setLoginInfo', loginInfo, function (result) {
                     reportStage(
                         result && result.status === 'success'

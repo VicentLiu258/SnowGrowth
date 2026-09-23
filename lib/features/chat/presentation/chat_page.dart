@@ -14,7 +14,9 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  const ChatPage({super.key, this.onChatClosed});
+
+  final VoidCallback? onChatClosed;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -75,6 +77,9 @@ class _ChatPageState extends State<ChatPage> {
 
   void _handleChatStage(JavaScriptMessage message) {
     debugPrint('SaleSmartly chat stage: ${message.message}');
+    if (message.message == 'chat-closed') {
+      widget.onChatClosed?.call();
+    }
   }
 
   Future<void> _sendAppIdentity(String rawUrl) async {

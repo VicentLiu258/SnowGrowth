@@ -217,36 +217,23 @@ class _MainScaffoldState extends State<MainScaffold> {
           child: Column(
             children: [
               SizedBox(
-                height: 56,
-                child: Row(
-                  children: [
-                    const SizedBox(width: 56),
-                    Expanded(
-                      child: Center(
-                        child: Text(
-                          AppStrings.chat,
-                          style: const TextStyle(
-                            color: AppColors.gray900,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 56,
-                      child: IconButton(
-                        tooltip: AppStrings.closeChat,
-                        onPressed: () => Navigator.of(sheetContext).pop(),
-                        icon: const Icon(Icons.close),
-                        color: AppColors.gray600,
-                      ),
-                    ),
-                  ],
+                height: 48,
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IconButton(
+                    tooltip: AppStrings.closeChat,
+                    onPressed: () => Navigator.of(sheetContext).pop(),
+                    icon: const Icon(Icons.close),
+                    color: AppColors.gray600,
+                  ),
                 ),
               ),
               const Divider(height: 1, color: AppColors.gray100),
-              const Expanded(child: ChatPage()),
+              Expanded(
+                child: ChatPage(
+                  onChatClosed: () => Navigator.of(sheetContext).pop(),
+                ),
+              ),
             ],
           ),
         );
