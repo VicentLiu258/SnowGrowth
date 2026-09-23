@@ -8,6 +8,7 @@ import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
+import 'package:snow_growth/features/chat/presentation/chat_floating_button.dart';
 import 'package:snow_growth/features/chat/presentation/chat_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
@@ -244,14 +245,13 @@ class _MainScaffoldState extends State<MainScaffold> {
         return HomePage(
           onOpenTools: () => _setTab(AppTab.tools),
           onOpenAbout: () => _setTab(AppTab.about),
+          onOpenChat: () => _setTab(AppTab.chat),
           onOpenTool: _openTool,
           onOpenWebsite: _openWebsite,
           websiteLookupService: _websiteLookupService,
         );
       case AppTab.tools:
-        return ToolsListPage(
-          onOpenTool: _openTool,
-        );
+        return ToolsListPage(onOpenTool: _openTool);
       case AppTab.chat:
         return const ChatPage();
       case AppTab.about:
@@ -315,8 +315,7 @@ class _MainScaffoldState extends State<MainScaffold> {
                                         _websiteUrl == null &&
                                         _activeTool == null &&
                                         _currentTab == AppTab.chat
-                                    ? 64 +
-                                        MediaQuery.paddingOf(context).bottom
+                                    ? 64 + MediaQuery.paddingOf(context).bottom
                                     : 0,
                           ),
                           child: KeyedSubtree(
@@ -344,6 +343,13 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ],
         ),
+        floatingActionButton:
+            !isWide &&
+                    _activeTool == null &&
+                    _websiteUrl == null &&
+                    _currentTab == AppTab.home
+                ? ChatFloatingButton(onTap: () => _setTab(AppTab.chat))
+                : null,
         bottomNavigationBar:
             showBottomNav && !isWide
                 ? _BottomNav(currentTab: _currentTab, onTabChanged: _setTab)

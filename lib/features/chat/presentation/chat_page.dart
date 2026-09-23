@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
@@ -30,21 +31,33 @@ class _ChatPageState extends State<ChatPage> {
           ..setJavaScriptMode(JavaScriptMode.unrestricted)
           ..setBackgroundColor(Colors.white)
           ..setNavigationDelegate(
-            NavigationDelegate(
-              onWebResourceError: (_) {},
-            ),
+            NavigationDelegate(onWebResourceError: _handleWebResourceError),
           );
 
+    unawaited(_initializeChat());
+  }
+
+  Future<void> _initializeChat() async {
     final platformController = _controller.platform;
     if (platformController is AndroidWebViewController) {
       try {
-        platformController.setMediaPlaybackRequiresUserGesture(false);
+        await platformController.setMediaPlaybackRequiresUserGesture(false);
       } catch (_) {}
-      unawaited(_allowThirdPartyCookies(platformController));
-      unawaited(_configureFileSelector(platformController));
+      // Apply cookie and file picker settings before the first page request.
+      await _allowThirdPartyCookies(platformController);
+      await _configureFileSelector(platformController);
     }
 
-    unawaited(_loadChat());
+    await _loadChat();
+  }
+
+  void _handleWebResourceError(WebResourceError error) {
+    final host = Uri.tryParse(error.url ?? '')?.host ?? 'unknown host';
+    debugPrint(
+      'Chat WebView resource error: code=${error.errorCode}, '
+      'mainFrame=${error.isForMainFrame}, host=$host, '
+      'description=${error.description}',
+    );
   }
 
   void _handlePermissionRequest(WebViewPermissionRequest request) {
@@ -89,7 +102,9 @@ class _ChatPageState extends State<ChatPage> {
   Future<void> _loadChat() async {
     try {
       await _controller.loadRequest(Uri.parse(AppConfig.chatPageUrl));
-    } catch (_) {}
+    } catch (error) {
+      debugPrint('Unable to load SaleSmartly chat page: ${error.runtimeType}');
+    }
   }
 
   Future<List<String>> _selectFiles(FileSelectorParams params) async {

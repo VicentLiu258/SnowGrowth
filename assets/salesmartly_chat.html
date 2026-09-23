@@ -15,14 +15,42 @@
     </style>
 </head>
 <body>
-    <script src="https://plugin-code.salesmartly.com/js/project_834655_866471_1790143164.js"></script>
     <script>
+        // Configure and queue commands before loading the SDK. This avoids
+        // depending on the WebView's script/network timing to create `ssq`.
         window.__ssc = window.__ssc || {};
-        window.__ssc.setting = window.__ssc.setting || {};
-        window.__ssc.setting.hideIcon = true;
+        window.__ssc.setting = Object.assign(
+            {},
+            window.__ssc.setting || {},
+            { hideIcon: true }
+        );
+        window.ssq = window.ssq || [];
+
         window.ssq.push('onReady', function () {
-            window.ssq.push('chatOpen');
+            window.ssq.push('chatOpen', function (result) {
+                if (!result || result.status !== 'success') {
+                    console.warn('[SaleSmartly] chatOpen status:', result && result.status);
+                }
+            });
         });
+
+        // Record that the widget emitted a visitor-send event without logging
+        // message text or other customer data.
+        window.ssq.push('onSendMessage', function (message) {
+            var fields = message && typeof message === 'object'
+                ? Object.keys(message)
+                : [];
+            console.info('[SaleSmartly] visitor message event; fields:', fields.join(','));
+        });
+
+        var salesmartlyScript = document.createElement('script');
+        salesmartlyScript.src =
+            'https://plugin-code.salesmartly.com/js/project_834655_866471_1790143164.js';
+        salesmartlyScript.async = true;
+        salesmartlyScript.onerror = function () {
+            console.error('[SaleSmartly] failed to load the chat SDK script.');
+        };
+        document.head.appendChild(salesmartlyScript);
     </script>
 </body>
 </html>
