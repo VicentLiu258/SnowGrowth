@@ -33,5 +33,5 @@ class AppConfig {
   /// Public page hosted from the site document root. The panel Files URL is
   /// only the upload console and is not reachable by the app WebView.
   static const String chatPageUrl =
-      'https://www.snowgrowth.com/salesmartly_chat.html';
+      'https://www.snowgrowth.com/salesmartly_chat.html?loginSource=postMessage';
 }

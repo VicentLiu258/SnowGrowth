@@ -1,11 +1,15 @@
 import 'dart:async';
+import 'dart:convert';
+import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
+import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -17,27 +21,36 @@ class ChatPage extends StatefulWidget {
 }
 
 class _ChatPageState extends State<ChatPage> {
+  static const _salesmartlyGuestIdKey = 'salesmartly_guest_user_id';
+
   late final WebViewController _controller;
 
   @override
   void initState() {
     super.initState();
 
-    _controller =
-        WebViewController.fromPlatformCreationParams(
-            const PlatformWebViewControllerCreationParams(),
-            onPermissionRequest: _handlePermissionRequest,
-          )
-          ..setJavaScriptMode(JavaScriptMode.unrestricted)
-          ..setBackgroundColor(Colors.white)
-          ..setNavigationDelegate(
-            NavigationDelegate(onWebResourceError: _handleWebResourceError),
-          );
+    _controller = WebViewController.fromPlatformCreationParams(
+      const PlatformWebViewControllerCreationParams(),
+      onPermissionRequest: _handlePermissionRequest,
+    );
 
     unawaited(_initializeChat());
   }
 
   Future<void> _initializeChat() async {
+    await _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
+    await _controller.setBackgroundColor(Colors.white);
+    await _controller.addJavaScriptChannel(
+      'SnowGrowthChat',
+      onMessageReceived: _handleChatStage,
+    );
+    await _controller.setNavigationDelegate(
+      NavigationDelegate(
+        onPageFinished: (url) => unawaited(_sendAppIdentity(url)),
+        onWebResourceError: _handleWebResourceError,
+      ),
+    );
+
     final platformController = _controller.platform;
     if (platformController is AndroidWebViewController) {
       try {
@@ -58,6 +71,56 @@ class _ChatPageState extends State<ChatPage> {
       'mainFrame=${error.isForMainFrame}, host=$host, '
       'description=${error.description}',
     );
+  }
+
+  void _handleChatStage(JavaScriptMessage message) {
+    debugPrint('SaleSmartly chat stage: ${message.message}');
+  }
+
+  Future<void> _sendAppIdentity(String rawUrl) async {
+    final pageUri = Uri.tryParse(rawUrl);
+    final chatUri = Uri.parse(AppConfig.chatPageUrl);
+    if (pageUri == null ||
+        pageUri.scheme != 'https' ||
+        pageUri.host != chatUri.host ||
+        pageUri.path != chatUri.path) {
+      return;
+    }
+
+    try {
+      final userId = await _getSalesmartlyGuestId();
+      final locale = WidgetsBinding.instance.platformDispatcher.locale;
+      final language = locale.countryCode == null
+          ? locale.languageCode
+          : '${locale.languageCode}-${locale.countryCode}';
+      final message = jsonEncode({
+        'type': 'service-link-login',
+        'version': 1,
+        'payload': {
+          'user_id': userId,
+          'user_name': 'Snow Growth App Visitor',
+          'language': language,
+        },
+      });
+
+      await _controller.runJavaScript(
+        'window.postMessage(${jsonEncode(message)}, window.location.origin);',
+      );
+    } catch (error) {
+      debugPrint('Unable to send SaleSmartly app identity: ${error.runtimeType}');
+    }
+  }
+
+  Future<String> _getSalesmartlyGuestId() async {
+    final storedId = await LocalStorage.getString(_salesmartlyGuestIdKey);
+    if (storedId != null && storedId.isNotEmpty) return storedId;
+
+    final random = Random.secure();
+    final randomBytes = List<int>.generate(32, (_) => random.nextInt(256));
+    final nonce = base64UrlEncode(randomBytes).replaceAll('=', '');
+    final userId = sha256.convert(utf8.encode(nonce)).toString();
+    await LocalStorage.setString(_salesmartlyGuestIdKey, userId);
+    return userId;
   }
 
   void _handlePermissionRequest(WebViewPermissionRequest request) {

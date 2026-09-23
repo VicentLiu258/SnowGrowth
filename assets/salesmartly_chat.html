@@ -16,41 +16,145 @@
 </head>
 <body>
     <script>
-        // Configure and queue commands before loading the SDK. This avoids
-        // depending on the WebView's script/network timing to create `ssq`.
-        window.__ssc = window.__ssc || {};
-        window.__ssc.setting = Object.assign(
-            {},
-            window.__ssc.setting || {},
-            { hideIcon: true }
-        );
-        window.ssq = window.ssq || [];
+        (function () {
+            'use strict';
 
-        window.ssq.push('onReady', function () {
-            window.ssq.push('chatOpen', function (result) {
-                if (!result || result.status !== 'success') {
-                    console.warn('[SaleSmartly] chatOpen status:', result && result.status);
+            var scriptUrl = 'https://plugin-code.salesmartly.com/js/project_834655_866471_1790143164.js';
+            var requiresAppLogin = new URLSearchParams(window.location.search)
+                .get('loginSource') === 'postMessage';
+            var sdkStarted = false;
+            var sdkReady = false;
+            var loginReady = false;
+            var openStarted = false;
+            var queueAttached = false;
+            var queueTimer;
+            var identityTimer;
+
+            // Set widget config before loading the project script. Do not create
+            // window.ssq: the SaleSmartly loader creates its own command queue.
+            window.__ssc = window.__ssc || {};
+            window.__ssc.setting = Object.assign(
+                {}, window.__ssc.setting || {}, { hideIcon: true }
+            );
+
+            function reportStage(stage) {
+                var bridge = window.SnowGrowthChat;
+                if (bridge && typeof bridge.postMessage === 'function') {
+                    bridge.postMessage(stage);
+                } else {
+                    console.info('[SaleSmartly]', stage);
                 }
-            });
-        });
+            }
 
-        // Record that the widget emitted a visitor-send event without logging
-        // message text or other customer data.
-        window.ssq.push('onSendMessage', function (message) {
-            var fields = message && typeof message === 'object'
-                ? Object.keys(message)
-                : [];
-            console.info('[SaleSmartly] visitor message event; fields:', fields.join(','));
-        });
+            function openWhenReady() {
+                if (!sdkReady || !loginReady || openStarted) return;
+                openStarted = true;
+                window.ssq.push('chatOpen', function (result) {
+                    var status = result && result.status;
+                    reportStage(status === 'success' ? 'chat-open-success' : 'chat-open-failed');
+                });
+            }
 
-        var salesmartlyScript = document.createElement('script');
-        salesmartlyScript.src =
-            'https://plugin-code.salesmartly.com/js/project_834655_866471_1790143164.js';
-        salesmartlyScript.async = true;
-        salesmartlyScript.onerror = function () {
-            console.error('[SaleSmartly] failed to load the chat SDK script.');
-        };
-        document.head.appendChild(salesmartlyScript);
+            function attachQueue(loginInfo) {
+                if (queueAttached) return;
+                if (!window.ssq || typeof window.ssq.push !== 'function') {
+                    if (!queueTimer) {
+                        queueTimer = window.setTimeout(function () {
+                            queueTimer = undefined;
+                            attachQueue(loginInfo);
+                        }, 20);
+                    }
+                    return;
+                }
+
+                queueAttached = true;
+                window.clearTimeout(queueTimer);
+                queueTimer = undefined;
+                window.ssq.push('onReady', function () {
+                    sdkReady = true;
+                    reportStage('sdk-ready');
+                    openWhenReady();
+                });
+                window.ssq.push('onSendMessage', function () {
+                    reportStage('visitor-message-event');
+                });
+                window.ssq.push('onReceiveMessage', function () {
+                    reportStage('agent-message-received');
+                });
+                window.ssq.push('setLoginInfo', loginInfo, function (result) {
+                    reportStage(
+                        result && result.status === 'success'
+                            ? 'login-success'
+                            : 'login-failed'
+                    );
+                });
+                // setLoginInfo is queued before opening chat. Readiness does not
+                // depend on its optional callback being implemented by the SDK.
+                loginReady = true;
+                reportStage('login-command-queued');
+                openWhenReady();
+            }
+
+            function startSDK(loginInfo) {
+                if (sdkStarted) return;
+                sdkStarted = true;
+
+                var script = document.createElement('script');
+                script.id = 'salesmartly-sdk';
+                script.async = true;
+                script.src = scriptUrl;
+                script.addEventListener('load', function () {
+                    attachQueue(loginInfo);
+                }, { once: true });
+                script.onerror = function () {
+                    window.clearTimeout(queueTimer);
+                    queueTimer = undefined;
+                    reportStage('sdk-load-failed');
+                };
+                document.head.appendChild(script);
+                attachQueue(loginInfo);
+            }
+
+            function validPayload(payload) {
+                return payload && typeof payload === 'object' && !Array.isArray(payload)
+                    && typeof payload.user_id === 'string' && payload.user_id.trim()
+                    && typeof payload.user_name === 'string' && payload.user_name.trim();
+            }
+
+            function receiveAppMessage(event) {
+                if (event.origin && event.origin !== window.location.origin) return;
+                if (event.source && event.source !== window) return;
+
+                var message;
+                try {
+                    message = typeof event.data === 'string' ? JSON.parse(event.data) : event.data;
+                } catch (_) {
+                    return;
+                }
+                if (!message || message.version !== 1 || message.type !== 'service-link-login') return;
+                if (!validPayload(message.payload)) {
+                    reportStage('invalid-app-identity');
+                    return;
+                }
+
+                window.clearTimeout(identityTimer);
+                startSDK(message.payload);
+            }
+
+            if (requiresAppLogin) {
+                window.addEventListener('message', receiveAppMessage);
+                identityTimer = window.setTimeout(function () {
+                    if (!sdkStarted) reportStage('app-identity-not-received');
+                }, 15000);
+            } else {
+                // A direct browser visit remains usable for a basic smoke test.
+                startSDK({
+                    user_id: 'snowgrowth_web_' + Math.random().toString(36).slice(2, 14),
+                    user_name: 'Snow Growth Web Visitor',
+                    language: navigator.language || 'en-US'
+                });
+            }
+        })();
     </script>
 </body>
 </html>
