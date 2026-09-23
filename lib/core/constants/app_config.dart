@@ -29,4 +29,9 @@ class AppConfig {
       'https://www.snowgrowth.com/legal/privacy-policy';
   static const String termsOfUseUrl =
       'https://www.snowgrowth.com/legal/terms-of-use';
+
+  /// Public page hosted from the site document root. The panel Files URL is
+  /// only the upload console and is not reachable by the app WebView.
+  static const String chatPageUrl =
+      'https://www.snowgrowth.com/salesmartly_chat.html';
 }

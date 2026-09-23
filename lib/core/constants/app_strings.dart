@@ -84,6 +84,9 @@ class AppStrings {
   static const String clearData = 'Clear Data';
   static const String exportData = 'Export Data';
 
+  // Chat
+  static const String chat = 'Chat';
+
   // Navigation
   static const String home = 'Home';
   static const String back = 'Back';

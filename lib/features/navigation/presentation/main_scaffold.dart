@@ -8,6 +8,7 @@ import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
+import 'package:snow_growth/features/chat/presentation/chat_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/tools/presentation/percentage_calculator_page.dart';
@@ -16,7 +17,7 @@ import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
 import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
 import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
 
-enum AppTab { home, tools, about }
+enum AppTab { home, tools, chat, about }
 
 enum ToolRoute { percentage, unit, tip }
 
@@ -251,6 +252,8 @@ class _MainScaffoldState extends State<MainScaffold> {
         return ToolsListPage(
           onOpenTool: _openTool,
         );
+      case AppTab.chat:
+        return const ChatPage();
       case AppTab.about:
         return const AboutPage();
     }
@@ -305,21 +308,33 @@ class _MainScaffoldState extends State<MainScaffold> {
                             ],
                           );
                         },
-                        child: KeyedSubtree(
-                          key: ValueKey(
-                            _websiteUrl ??
-                                _activeTool?.name ??
-                                _currentTab.name,
+                        child: Padding(
+                          padding: EdgeInsets.only(
+                            bottom:
+                                !isWide &&
+                                        _websiteUrl == null &&
+                                        _activeTool == null &&
+                                        _currentTab == AppTab.chat
+                                    ? 64 +
+                                        MediaQuery.paddingOf(context).bottom
+                                    : 0,
                           ),
-                          child:
-                              _websiteUrl != null
-                                  ? WebsiteWebViewPage(
-                                    url: _websiteUrl!,
-                                    onBack: _closeWebsite,
-                                  )
-                                  : _activeTool != null
-                                  ? _buildToolPage()
-                                  : _buildTabPage(),
+                          child: KeyedSubtree(
+                            key: ValueKey(
+                              _websiteUrl ??
+                                  _activeTool?.name ??
+                                  _currentTab.name,
+                            ),
+                            child:
+                                _websiteUrl != null
+                                    ? WebsiteWebViewPage(
+                                      url: _websiteUrl!,
+                                      onBack: _closeWebsite,
+                                    )
+                                    : _activeTool != null
+                                    ? _buildToolPage()
+                                    : _buildTabPage(),
+                          ),
                         ),
                       ),
                     ),
@@ -390,6 +405,13 @@ class _Sidebar extends StatelessWidget {
             label: AppStrings.tools,
             selected: currentTab == AppTab.tools,
             onTap: () => onTabChanged(AppTab.tools),
+          ),
+          const SizedBox(height: 8),
+          _NavItem(
+            icon: Icons.chat_outlined,
+            label: AppStrings.chat,
+            selected: currentTab == AppTab.chat,
+            onTap: () => onTabChanged(AppTab.chat),
           ),
           const SizedBox(height: 8),
           _NavItem(
@@ -482,6 +504,12 @@ class _BottomNav extends StatelessWidget {
             label: AppStrings.tools,
             selected: currentTab == AppTab.tools,
             onTap: () => onTabChanged(AppTab.tools),
+          ),
+          _BottomNavItem(
+            icon: Icons.chat_outlined,
+            label: AppStrings.chat,
+            selected: currentTab == AppTab.chat,
+            onTap: () => onTabChanged(AppTab.chat),
           ),
           _BottomNavItem(
             icon: Icons.info_outline,
