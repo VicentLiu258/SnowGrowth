@@ -201,10 +201,15 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _openChat() async {
+    double? chatWindowTop;
+    bool chatSheetClosing = false;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      isDismissible: true,
+      enableDrag: true,
+      constraints: const BoxConstraints(maxWidth: 440),
       backgroundColor: Colors.white,
       barrierColor: Colors.black54,
       shape: const RoundedRectangleBorder(
@@ -212,30 +217,51 @@ class _MainScaffoldState extends State<MainScaffold> {
       ),
       clipBehavior: Clip.antiAlias,
       builder: (sheetContext) {
-        return FractionallySizedBox(
-          heightFactor: 1,
-          child: Column(
-            children: [
-              SizedBox(
-                height: 48,
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: IconButton(
-                    tooltip: AppStrings.closeChat,
-                    onPressed: () => Navigator.of(sheetContext).pop(),
-                    icon: const Icon(Icons.close),
-                    color: AppColors.gray600,
-                  ),
+        void closeChatSheet() {
+          if (chatSheetClosing || !sheetContext.mounted) return;
+          if (ModalRoute.of(sheetContext)?.isCurrent != true) return;
+          chatSheetClosing = true;
+          Navigator.of(sheetContext).pop();
+        }
+
+        return StatefulBuilder(
+          builder:
+              (context, setSheetState) => FractionallySizedBox(
+                heightFactor: 1,
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: ChatPage(
+                        onChatClosed: closeChatSheet,
+                        onWindowTopChanged: (top) {
+                          if (!chatSheetClosing &&
+                              sheetContext.mounted &&
+                              chatWindowTop != top) {
+                            setSheetState(() => chatWindowTop = top);
+                          }
+                        },
+                      ),
+                    ),
+                    AnimatedPositioned(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      top: (chatWindowTop ?? 0) + 8,
+                      right: 28,
+                      child: Material(
+                        color: Colors.white.withValues(alpha: 0.94),
+                        shape: const CircleBorder(),
+                        elevation: 2,
+                        child: IconButton(
+                          tooltip: AppStrings.closeChat,
+                          onPressed: closeChatSheet,
+                          icon: const Icon(Icons.close, size: 20),
+                          color: AppColors.gray600,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Divider(height: 1, color: AppColors.gray100),
-              Expanded(
-                child: ChatPage(
-                  onChatClosed: () => Navigator.of(sheetContext).pop(),
-                ),
-              ),
-            ],
-          ),
         );
       },
     );

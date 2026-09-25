@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:crypto/crypto.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
@@ -14,9 +13,10 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key, this.onChatClosed});
+  const ChatPage({super.key, this.onChatClosed, this.onWindowTopChanged});
 
   final VoidCallback? onChatClosed;
+  final ValueChanged<double>? onWindowTopChanged;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -77,6 +77,14 @@ class _ChatPageState extends State<ChatPage> {
 
   void _handleChatStage(JavaScriptMessage message) {
     debugPrint('SaleSmartly chat stage: ${message.message}');
+    const topPrefix = 'chat-window-top:';
+    if (message.message.startsWith(topPrefix)) {
+      final top = double.tryParse(message.message.substring(topPrefix.length));
+      if (top != null && top.isFinite && top >= 0) {
+        widget.onWindowTopChanged?.call(top);
+      }
+      return;
+    }
     if (message.message == 'chat-closed') {
       widget.onChatClosed?.call();
     }
