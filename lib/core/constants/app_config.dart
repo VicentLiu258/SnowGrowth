@@ -34,4 +34,15 @@ class AppConfig {
   /// only the upload console and is not reachable by the app WebView.
   static const String chatPageUrl =
       'https://www.snowgrowth.com/salesmartly_chat.html?loginSource=postMessage';
+
+  /// External messaging channels used by header / quick actions / bottom ball.
+  static const String whatsappUrl = String.fromEnvironment(
+    'WHATSAPP_URL',
+    defaultValue: 'https://wa.me/',
+  );
+  static const String telegramUrl = String.fromEnvironment(
+    'TELEGRAM_URL',
+    defaultValue: 'https://t.me/',
+  );
+  static const String contactEmail = 'hello@icia.com';
 }

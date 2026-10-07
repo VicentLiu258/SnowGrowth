@@ -28,7 +28,15 @@ class AppButton extends StatelessWidget {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         if (icon != null) ...[icon!, const SizedBox(width: 8)],
-        Text(label),
+        if (label.isNotEmpty)
+          Flexible(
+            child: Text(
+              label,
+              textAlign: TextAlign.center,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
       ],
     );
 
@@ -39,13 +47,13 @@ class AppButton extends StatelessWidget {
           child: ElevatedButton(
             onPressed: onPressed,
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.emerald600,
+              backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               padding:
                   padding ??
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(999),
               ),
               elevation: 0,
             ),
@@ -63,9 +71,9 @@ class AppButton extends StatelessWidget {
               padding:
                   padding ??
                   const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-              side: const BorderSide(color: AppColors.gray200),
+              side: const BorderSide(color: AppColors.border),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(999),
               ),
             ),
             child: child,

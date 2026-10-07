@@ -50,6 +50,27 @@ class LocalStorage {
     }
   }
 
+  static Future<void> clearAll() async {
+    final prefs = await _prefs;
+    await prefs.clear();
+  }
+
+  /// Calculator-related keys used by Settings "Clear Cache".
+  static const List<String> calculatorCacheKeys = [
+    'pct_mode',
+    'pct_x',
+    'pct_y',
+    'tip_bill',
+    'tip_pct',
+    'tip_split',
+    'unit_cat',
+    'unit_from',
+    'unit_to',
+    'unit_v1',
+    'unit_v2',
+    'unit_last_edit',
+  ];
+
   static Future<T> getJson<T>(
     String key,
     T Function(Map<String, dynamic>) fromJson,

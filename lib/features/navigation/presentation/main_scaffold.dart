@@ -7,10 +7,11 @@ import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
+import 'package:snow_growth/core/widgets/brand_icons.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
-import 'package:snow_growth/features/chat/presentation/chat_floating_button.dart';
 import 'package:snow_growth/features/chat/presentation/chat_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
+import 'package:snow_growth/features/settings/presentation/settings_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
 import 'package:snow_growth/features/tools/presentation/percentage_calculator_page.dart';
 import 'package:snow_growth/features/tools/presentation/tip_calculator_page.dart';
@@ -18,7 +19,7 @@ import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
 import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
 import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
 
-enum AppTab { home, tools, about }
+enum AppTab { home, tools, about, settings }
 
 enum ToolRoute { percentage, unit, tip }
 
@@ -69,6 +70,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   bool _isOpeningDeepLink = false;
   int _deepLinkRequestId = 0;
   int _lastHandledDeepLinkVersion = 0;
+  String _toolsQuery = '';
   late final DeepLinkController _deepLinkController;
   bool _ownsDeepLinkController = false;
   late final WebsiteLookupService _websiteLookupService;
@@ -197,6 +199,17 @@ class _MainScaffoldState extends State<MainScaffold> {
     setState(() {
       _currentTab = tab;
       _activeTool = null;
+      if (tab != AppTab.tools) {
+        _toolsQuery = '';
+      }
+    });
+  }
+
+  void _openToolsWithQuery(String query) {
+    setState(() {
+      _currentTab = AppTab.tools;
+      _activeTool = null;
+      _toolsQuery = query;
     });
   }
 
@@ -213,7 +226,7 @@ class _MainScaffoldState extends State<MainScaffold> {
       backgroundColor: Colors.white,
       barrierColor: Colors.black54,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
       clipBehavior: Clip.antiAlias,
       builder: (sheetContext) {
@@ -228,38 +241,46 @@ class _MainScaffoldState extends State<MainScaffold> {
           builder:
               (context, setSheetState) => FractionallySizedBox(
                 heightFactor: 1,
-                child: Stack(
-                  children: [
-                    Positioned.fill(
-                      child: ChatPage(
-                        onChatClosed: closeChatSheet,
-                        onWindowTopChanged: (top) {
-                          if (!chatSheetClosing &&
-                              sheetContext.mounted &&
-                              chatWindowTop != top) {
-                            setSheetState(() => chatWindowTop = top);
-                          }
-                        },
-                      ),
-                    ),
-                    AnimatedPositioned(
-                      duration: const Duration(milliseconds: 180),
-                      curve: Curves.easeOut,
-                      top: (chatWindowTop ?? 0) + 8,
-                      right: 28,
-                      child: Material(
-                        color: Colors.white.withValues(alpha: 0.94),
-                        shape: const CircleBorder(),
-                        elevation: 2,
-                        child: IconButton(
-                          tooltip: AppStrings.closeChat,
-                          onPressed: closeChatSheet,
-                          icon: const Icon(Icons.close, size: 20),
-                          color: AppColors.gray600,
+                child: Padding(
+                  padding: EdgeInsets.only(
+                    bottom:
+                        Theme.of(context).platform == TargetPlatform.android
+                            ? MediaQuery.viewInsetsOf(context).bottom
+                            : 0,
+                  ),
+                  child: Stack(
+                    children: [
+                      Positioned.fill(
+                        child: ChatPage(
+                          onChatClosed: closeChatSheet,
+                          onWindowTopChanged: (top) {
+                            if (!chatSheetClosing &&
+                                sheetContext.mounted &&
+                                chatWindowTop != top) {
+                              setSheetState(() => chatWindowTop = top);
+                            }
+                          },
                         ),
                       ),
-                    ),
-                  ],
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 180),
+                        curve: Curves.easeOut,
+                        top: (chatWindowTop ?? 0) + 8,
+                        right: 28,
+                        child: Material(
+                          color: Colors.white.withValues(alpha: 0.94),
+                          shape: const CircleBorder(),
+                          elevation: 2,
+                          child: IconButton(
+                            tooltip: AppStrings.closeChat,
+                            onPressed: closeChatSheet,
+                            icon: const Icon(Icons.close, size: 20),
+                            color: AppColors.gray600,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
         );
@@ -314,12 +335,20 @@ class _MainScaffoldState extends State<MainScaffold> {
           onOpenAbout: () => _setTab(AppTab.about),
           onOpenTool: _openTool,
           onOpenWebsite: _openWebsite,
+          onOpenToolsWithQuery: _openToolsWithQuery,
+          onOpenChat: _openChat,
           websiteLookupService: _websiteLookupService,
         );
       case AppTab.tools:
-        return ToolsListPage(onOpenTool: _openTool);
+        return ToolsListPage(
+          onOpenTool: _openTool,
+          initialQuery: _toolsQuery,
+          onQueryChange: (q) => _toolsQuery = q,
+        );
       case AppTab.about:
-        return const AboutPage();
+        return AboutPage(onOpenChat: _openChat);
+      case AppTab.settings:
+        return const SettingsPage();
     }
   }
 
@@ -341,70 +370,57 @@ class _MainScaffoldState extends State<MainScaffold> {
       child: Scaffold(
         extendBody: true,
         extendBodyBehindAppBar: true,
+        backgroundColor: AppColors.background,
         body: Row(
           children: [
             if (isWide && _websiteUrl == null)
-              _Sidebar(currentTab: _currentTab, onTabChanged: _setTab),
+              _Sidebar(
+                currentTab: _currentTab,
+                onTabChanged: _setTab,
+                onOpenInAppChat: _openChat,
+              ),
             Expanded(
               child: SafeArea(
                 top: _websiteUrl == null,
                 bottom: false,
-                child: Column(
-                  children: [
-                    if (!isWide &&
-                        _activeTool == null &&
-                        _websiteUrl == null &&
-                        _currentTab == AppTab.home)
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-                        child: Row(children: const [AppLogo(height: 32)]),
-                      ),
-                    Expanded(
-                      child: AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        layoutBuilder: (currentChild, previousChildren) {
-                          return Stack(
-                            alignment: Alignment.topCenter,
-                            fit: StackFit.expand,
-                            children: [
-                              ...previousChildren,
-                              if (currentChild != null) currentChild,
-                            ],
-                          );
-                        },
-                        child: KeyedSubtree(
-                          key: ValueKey(
-                            _websiteUrl ??
-                                _activeTool?.name ??
-                                _currentTab.name,
-                          ),
-                          child:
-                              _websiteUrl != null
-                                  ? WebsiteWebViewPage(
-                                    url: _websiteUrl!,
-                                    onBack: _closeWebsite,
-                                  )
-                                  : _activeTool != null
-                                  ? _buildToolPage()
-                                  : _buildTabPage(),
-                        ),
-                      ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 200),
+                  layoutBuilder: (currentChild, previousChildren) {
+                    return Stack(
+                      alignment: Alignment.topCenter,
+                      fit: StackFit.expand,
+                      children: [
+                        ...previousChildren,
+                        if (currentChild != null) currentChild,
+                      ],
+                    );
+                  },
+                  child: KeyedSubtree(
+                    key: ValueKey(
+                      _websiteUrl ?? _activeTool?.name ?? _currentTab.name,
                     ),
-                  ],
+                    child:
+                        _websiteUrl != null
+                            ? WebsiteWebViewPage(
+                              url: _websiteUrl!,
+                              onBack: _closeWebsite,
+                            )
+                            : _activeTool != null
+                            ? _buildToolPage()
+                            : _buildTabPage(),
+                  ),
                 ),
               ),
             ),
           ],
         ),
-        floatingActionButton:
-            _activeTool == null &&
-                    _websiteUrl == null &&
-                    _currentTab == AppTab.home
-                ? ChatFloatingButton(onTap: _openChat)
-                : null,
         bottomNavigationBar:
             showBottomNav && !isWide
-                ? _BottomNav(currentTab: _currentTab, onTabChanged: _setTab)
+                ? _BottomNav(
+                  currentTab: _currentTab,
+                  onTabChanged: _setTab,
+                  onOpenInAppChat: _openChat,
+                )
                 : null,
       ),
     );
@@ -424,10 +440,15 @@ class _StartupLoading extends StatelessWidget {
 }
 
 class _Sidebar extends StatelessWidget {
-  const _Sidebar({required this.currentTab, required this.onTabChanged});
+  const _Sidebar({
+    required this.currentTab,
+    required this.onTabChanged,
+    required this.onOpenInAppChat,
+  });
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabChanged;
+  final VoidCallback onOpenInAppChat;
 
   @override
   Widget build(BuildContext context) {
@@ -435,7 +456,7 @@ class _Sidebar extends StatelessWidget {
       width: 280,
       decoration: const BoxDecoration(
         color: AppColors.cardBackground,
-        border: Border(right: BorderSide(color: AppColors.gray200)),
+        border: Border(right: BorderSide(color: AppColors.border)),
       ),
       padding: EdgeInsets.only(
         top: 24 + MediaQuery.paddingOf(context).top,
@@ -448,7 +469,7 @@ class _Sidebar extends StatelessWidget {
         children: [
           GestureDetector(
             onTap: () => onTabChanged(AppTab.home),
-            child: const AppLogo(height: 32),
+            child: const AppLogo(height: 22),
           ),
           const SizedBox(height: 40),
           _NavItem(
@@ -466,10 +487,25 @@ class _Sidebar extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _NavItem(
+            icon: Icons.chat_bubble_outline,
+            label: AppStrings.inAppChat,
+            selected: false,
+            onTap: onOpenInAppChat,
+            selectedColor: AppColors.primary,
+          ),
+          const SizedBox(height: 8),
+          _NavItem(
             icon: Icons.info_outline,
             label: AppStrings.about,
             selected: currentTab == AppTab.about,
             onTap: () => onTabChanged(AppTab.about),
+          ),
+          const SizedBox(height: 8),
+          _NavItem(
+            icon: Icons.settings_outlined,
+            label: AppStrings.settings,
+            selected: currentTab == AppTab.settings,
+            onTap: () => onTabChanged(AppTab.settings),
           ),
         ],
       ),
@@ -483,35 +519,39 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.selectedColor,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final Color? selectedColor;
 
   @override
   Widget build(BuildContext context) {
+    final active = selectedColor ?? AppColors.primary;
     return Material(
-      color: selected ? AppColors.emerald50 : Colors.transparent,
+      color: selected ? AppColors.primaryLight : Colors.transparent,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           child: Row(
             children: [
-              Icon(
-                icon,
-                color: selected ? AppColors.emerald600 : AppColors.gray500,
-              ),
-              const SizedBox(width: 16),
-              Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: selected ? AppColors.emerald600 : AppColors.gray500,
+              Icon(icon, color: selected ? active : AppColors.textTertiary),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w600,
+                    color: selected ? active : AppColors.textTertiary,
+                  ),
                 ),
               ),
             ],
@@ -523,45 +563,166 @@ class _NavItem extends StatelessWidget {
 }
 
 class _BottomNav extends StatelessWidget {
-  const _BottomNav({required this.currentTab, required this.onTabChanged});
+  const _BottomNav({
+    required this.currentTab,
+    required this.onTabChanged,
+    required this.onOpenInAppChat,
+  });
 
   final AppTab currentTab;
   final ValueChanged<AppTab> onTabChanged;
+  final VoidCallback onOpenInAppChat;
+
+  static const double archRise = 16.0;
+  static const double archHalfWidth = 44.0;
+  static const double baseHeight = 58.0;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.cardBackground,
-        border: Border(top: BorderSide(color: AppColors.gray100)),
-      ),
-      padding: EdgeInsets.fromLTRB(
-        24,
-        8,
-        24,
-        8 + MediaQuery.paddingOf(context).bottom,
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final totalHeight = baseHeight + archRise + bottomInset;
+
+    return SizedBox(
+      height: totalHeight,
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          _BottomNavItem(
-            icon: Icons.home_outlined,
-            label: AppStrings.home,
-            selected: currentTab == AppTab.home,
-            onTap: () => onTabChanged(AppTab.home),
+          // 1. Continuous white background shape with unified center dome
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _ContinuousDomePainter(
+                archRise: archRise,
+                archHalfWidth: archHalfWidth,
+              ),
+            ),
           ),
-          _BottomNavItem(
-            icon: Icons.grid_view_outlined,
-            label: AppStrings.tools,
-            selected: currentTab == AppTab.tools,
-            onTap: () => onTabChanged(AppTab.tools),
+          // 2. Tab Items Row with strictly baseline-aligned typography
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: bottomInset,
+            top: 0,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Expanded(
+                  child: _BottomNavItem(
+                    icon: Icons.home_outlined,
+                    label: AppStrings.home,
+                    selected: currentTab == AppTab.home,
+                    archRise: archRise,
+                    onTap: () => onTabChanged(AppTab.home),
+                  ),
+                ),
+                Expanded(
+                  child: _BottomNavItem(
+                    icon: Icons.grid_view_outlined,
+                    label: AppStrings.tools,
+                    selected: currentTab == AppTab.tools,
+                    archRise: archRise,
+                    onTap: () => onTabChanged(AppTab.tools),
+                  ),
+                ),
+                // Center In-app Chat Integrated Item - sits completely inside the white dome
+                Expanded(
+                  child: _InAppChatCenterItem(
+                    onTap: onOpenInAppChat,
+                  ),
+                ),
+                Expanded(
+                  child: _BottomNavItem(
+                    icon: Icons.info_outline,
+                    label: AppStrings.about,
+                    selected: currentTab == AppTab.about,
+                    archRise: archRise,
+                    onTap: () => onTabChanged(AppTab.about),
+                  ),
+                ),
+                Expanded(
+                  child: _BottomNavItem(
+                    icon: Icons.settings_outlined,
+                    label: AppStrings.settings,
+                    selected: currentTab == AppTab.settings,
+                    archRise: archRise,
+                    onTap: () => onTabChanged(AppTab.settings),
+                  ),
+                ),
+              ],
+            ),
           ),
-          _BottomNavItem(
-            icon: Icons.info_outline,
-            label: AppStrings.about,
-            selected: currentTab == AppTab.about,
-            onTap: () => onTabChanged(AppTab.about),
+        ],
+      ),
+    );
+  }
+}
+
+class _InAppChatCenterItem extends StatefulWidget {
+  const _InAppChatCenterItem({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_InAppChatCenterItem> createState() => _InAppChatCenterItemState();
+}
+
+class _InAppChatCenterItemState extends State<_InAppChatCenterItem> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) => setState(() => _pressed = false),
+      onTapCancel: () => setState(() => _pressed = false),
+      onTap: widget.onTap,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          // In-app Chat Ball placed comfortably and completely inside the white dome
+          AnimatedScale(
+            scale: _pressed ? 0.92 : 1.0,
+            duration: const Duration(milliseconds: 120),
+            curve: Curves.easeOut,
+            child: Container(
+              width: 42,
+              height: 42,
+              margin: const EdgeInsets.only(top: 5),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFFFBBF24),
+                    Color(0xFFF59E0B),
+                    Color(0xFFD97706),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: BrandIcons.inAppChat(size: 21, color: Colors.white),
+            ),
           ),
+          const SizedBox(height: 3),
+          const Text(
+            AppStrings.inAppChat,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w600,
+              color: Color(0xFFD97706),
+              letterSpacing: -0.1,
+              height: 1,
+            ),
+          ),
+          const SizedBox(height: 7),
         ],
       ),
     );
@@ -573,38 +734,116 @@ class _BottomNavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.selected,
+    required this.archRise,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool selected;
+  final double archRise;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.emerald600 : AppColors.gray400;
+    final color = selected ? AppColors.primary : const Color(0xFF8C93A4);
+
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Padding(
-        padding: const EdgeInsets.all(8),
+        padding: EdgeInsets.only(top: archRise),
         child: Column(
-          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Icon(icon, color: color, size: 24),
+            Icon(icon, color: color, size: 22),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
+                fontSize: 10,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
                 color: color,
+                letterSpacing: -0.1,
+                height: 1,
               ),
             ),
+            const SizedBox(height: 7),
           ],
         ),
       ),
     );
   }
+}
+
+/// Draws the continuous white bottom bar with an integrated center dome arch.
+class _ContinuousDomePainter extends CustomPainter {
+  const _ContinuousDomePainter({
+    required this.archRise,
+    required this.archHalfWidth,
+  });
+
+  final double archRise;
+  final double archHalfWidth;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final midX = size.width / 2;
+    final w = size.width;
+    final h = size.height;
+
+    // Smooth continuous dome path
+    final path = Path()
+      ..moveTo(0, archRise)
+      ..lineTo(midX - archHalfWidth, archRise)
+      ..cubicTo(
+        midX - archHalfWidth * 0.55, archRise,
+        midX - archHalfWidth * 0.45, 0,
+        midX, 0,
+      )
+      ..cubicTo(
+        midX + archHalfWidth * 0.45, 0,
+        midX + archHalfWidth * 0.55, archRise,
+        midX + archHalfWidth, archRise,
+      )
+      ..lineTo(w, archRise)
+      ..lineTo(w, h)
+      ..lineTo(0, h)
+      ..close();
+
+    // Subtle upward drop shadow
+    canvas.drawShadow(path, Colors.black.withValues(alpha: 0.04), 8, true);
+
+    // Continuous white fill
+    final fillPaint = Paint()
+      ..color = Colors.white
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(path, fillPaint);
+
+    // Continuous 1px subtle top border line
+    final borderPaint = Paint()
+      ..color = const Color(0xFFE5E7EB)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final borderPath = Path()
+      ..moveTo(0, archRise)
+      ..lineTo(midX - archHalfWidth, archRise)
+      ..cubicTo(
+        midX - archHalfWidth * 0.55, archRise,
+        midX - archHalfWidth * 0.45, 0,
+        midX, 0,
+      )
+      ..cubicTo(
+        midX + archHalfWidth * 0.45, 0,
+        midX + archHalfWidth * 0.55, archRise,
+        midX + archHalfWidth, archRise,
+      )
+      ..lineTo(w, archRise);
+
+    canvas.drawPath(borderPath, borderPaint);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

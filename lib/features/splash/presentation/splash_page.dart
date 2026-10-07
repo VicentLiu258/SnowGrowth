@@ -30,7 +30,7 @@ class SplashView extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
-                  color: Color(0xFF012646),
+                  color: Color(0xFF111827),
                   letterSpacing: -0.4,
                 ),
               ),

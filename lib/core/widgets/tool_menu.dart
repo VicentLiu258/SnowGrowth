@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/widgets/app_button.dart';
 
@@ -11,8 +12,8 @@ class ToolMenu extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
-      icon: const Icon(Icons.more_vert),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       onSelected: (value) {
         if (value == 'clear') onClear();
         if (value == 'export' && onExport != null) onExport!();
@@ -39,6 +40,27 @@ class ToolMenu extends StatelessWidget {
                 ],
               ),
             ),
+            if (onExport != null)
+              PopupMenuItem(
+                value: 'export',
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.download_outlined,
+                      color: AppColors.agentBlue,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      AppStrings.exportData,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
     );
   }

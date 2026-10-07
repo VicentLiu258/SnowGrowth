@@ -151,7 +151,7 @@ class _PercentageCalculatorPageState extends State<PercentageCalculatorPage> {
                     padding: const EdgeInsets.only(bottom: 12),
                     child: InkWell(
                       onTap: () => _saveMode(index),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(10),
                       child: Row(
                         children: [
                           Container(

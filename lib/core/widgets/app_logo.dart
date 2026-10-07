@@ -3,7 +3,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 
 class AppLogo extends StatelessWidget {
-  const AppLogo({super.key, this.height = 32}) : markOnly = false;
+  const AppLogo({super.key, this.height = 20}) : markOnly = false;
 
   const AppLogo.mark({super.key, this.height = 88}) : markOnly = true;
 
@@ -28,26 +28,13 @@ class _TextLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text.rich(
-      TextSpan(
-        children: [
-          TextSpan(
-            text: 'Snow',
-            style: TextStyle(
-              fontSize: height * 0.6,
-              fontWeight: FontWeight.bold,
-              color: AppColors.gray900,
-            ),
-          ),
-          TextSpan(
-            text: 'Growth',
-            style: TextStyle(
-              fontSize: height * 0.6,
-              fontWeight: FontWeight.bold,
-              color: AppColors.emerald600,
-            ),
-          ),
-        ],
+    return Text(
+      'ICIA',
+      style: TextStyle(
+        fontSize: height * 0.85,
+        fontWeight: FontWeight.w700,
+        color: AppColors.textPrimary,
+        letterSpacing: -0.4,
       ),
     );
   }

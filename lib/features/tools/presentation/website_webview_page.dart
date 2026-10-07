@@ -122,7 +122,7 @@ class _WebsiteWebViewPageState extends State<WebsiteWebViewPage> {
         context: context,
         backgroundColor: Colors.white,
         shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
         ),
         builder: (ctx) => SafeArea(
           child: Wrap(

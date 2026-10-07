@@ -19,5 +19,7 @@ void main() {
 
     expect(find.textContaining(AppStrings.heroTitle), findsOneWidget);
     expect(find.text(AppStrings.tools), findsWidgets);
+    expect(find.text(AppStrings.inAppChat), findsWidgets);
+    expect(find.text(AppStrings.settings), findsOneWidget);
   });
 }

@@ -1,7 +1,7 @@
 name: snow_growth
 description: Snow Growth - Brand portal and utility tools for brokers, fintech and asset managers.
 publish_to: 'none'
-version: 1.0.1+3
+version: 1.1.0+6
 
 environment:
   sdk: ^3.7.2
@@ -39,5 +39,9 @@ flutter:
     - assets/brand_mark.png
     - assets/app_icon.png
     - assets/splash_brand.png
+    - assets/hero.webp
     - assets/hero-illustration.webp
     - assets/case.webp
+    - assets/icon_whatsapp.svg
+    - assets/icon_telegram.svg
+    - assets/icon_salesmartly.svg

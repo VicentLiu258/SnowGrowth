@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/features/chat/presentation/chat_floating_button.dart';
-import 'package:snow_growth/features/chat/presentation/chat_page.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -84,13 +84,13 @@ void main() {
   });
 
   group('ChatFloatingButton', () {
-    testWidgets('renders icon and badge correctly', (tester) async {
-      int tapCount = 0;
+    testWidgets('renders icon, badge and responds to taps', (tester) async {
+      var tapCount = 0;
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: Center(
-              child: ChatFloatingButton(onTap: () => tapCount++, badgeCount: 2),
+              child: ChatFloatingButton(onTap: () => tapCount++),
             ),
           ),
         ),
@@ -123,35 +123,33 @@ void main() {
     });
   });
 
-  group('MainScaffold floating button integration', () {
-    testWidgets(
-      'shows FAB on mobile Home tab and navigates to Chat when tapped',
-      (tester) async {
-        tester.view.physicalSize = const Size(600, 900);
-        tester.view.devicePixelRatio = 1.0;
-        addTearDown(() {
-          tester.view.resetPhysicalSize();
-          tester.view.resetDevicePixelRatio();
-        });
+  group('MainScaffold bottom navigation', () {
+    testWidgets('shows 5-tab bottom nav with In-app Chat center on mobile', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(600, 900);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
 
-        await tester.pumpWidget(const MaterialApp(home: MainScaffold()));
-        await tester.pumpAndSettle();
+      await tester.pumpWidget(const MaterialApp(home: MainScaffold()));
+      await tester.pumpAndSettle();
 
-        // Mobile Home tab: FAB should be present
-        expect(find.byType(ChatFloatingButton), findsOneWidget);
-        expect(find.text('2'), findsOneWidget);
+      // Legacy FAB removed — support lives in header / nav ball.
+      expect(find.byType(ChatFloatingButton), findsNothing);
 
-        // Tap FAB to open Chat
-        await tester.tap(find.byType(ChatFloatingButton));
-        await tester.pumpAndSettle();
+      expect(find.text(AppStrings.home), findsWidgets);
+      expect(find.text(AppStrings.tools), findsWidgets);
+      expect(find.text(AppStrings.inAppChat), findsWidgets);
+      expect(find.text(AppStrings.about), findsWidgets);
+      expect(find.text(AppStrings.settings), findsWidgets);
+    });
 
-        // Should now be on ChatPage and FAB should be hidden
-        expect(find.byType(ChatPage), findsOneWidget);
-        expect(find.byType(ChatFloatingButton), findsNothing);
-      },
-    );
-
-    testWidgets('hides FAB on wide desktop screens', (tester) async {
+    testWidgets('hides mobile bottom nav on wide desktop screens', (
+      tester,
+    ) async {
       tester.view.physicalSize = const Size(1024, 768);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(() {
@@ -162,8 +160,9 @@ void main() {
       await tester.pumpWidget(const MaterialApp(home: MainScaffold()));
       await tester.pumpAndSettle();
 
-      // On wide screen, floating action button is hidden
       expect(find.byType(ChatFloatingButton), findsNothing);
+      // Sidebar shows Settings instead of bottom nav ball layout.
+      expect(find.text(AppStrings.settings), findsOneWidget);
     });
   });
 }
