@@ -21,7 +21,7 @@
                                     <constraint firstAttribute="height" constant="120" id="hMark"/>
                                 </constraints>
                             </imageView>
-                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="Snow Growth" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="titleLabel">
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" text="ICIA" textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" translatesAutoresizingMaskIntoConstraints="NO" id="titleLabel">
                                 <fontDescription key="fontDescription" type="boldSystem" pointSize="28"/>
                                 <color key="textColor" red="0.003921568627" green="0.1490196078" blue="0.2745098039" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
                             </label>

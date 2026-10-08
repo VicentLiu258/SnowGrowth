@@ -111,7 +111,7 @@ class _ChatPageState extends State<ChatPage> {
         'version': 1,
         'payload': {
           'user_id': userId,
-          'user_name': 'Snow Growth App Visitor',
+          'user_name': 'ICIA App Visitor',
           'language': language,
         },
       });
