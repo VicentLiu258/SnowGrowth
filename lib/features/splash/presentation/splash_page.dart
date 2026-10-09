@@ -15,26 +15,10 @@ class SplashView extends StatelessWidget {
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/brand_mark.png',
-                width: 120,
-                height: 120,
-                fit: BoxFit.contain,
-              ),
-              const SizedBox(height: 20),
-              const Text(
-                AppStrings.appName,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF111827),
-                  letterSpacing: -0.4,
-                ),
-              ),
-            ],
+          child: Image.asset(
+            'assets/brand_mark.png',
+            width: 220,
+            fit: BoxFit.contain,
           ),
         ),
       ),

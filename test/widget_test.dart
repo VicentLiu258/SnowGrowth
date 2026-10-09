@@ -10,7 +10,6 @@ void main() {
     await tester.pumpWidget(const SnowGrowthApp());
     await tester.pump();
 
-    expect(find.text(AppStrings.appName), findsWidgets);
     expect(find.byType(Image), findsWidgets);
 
     await tester.pump(const Duration(milliseconds: 2500));
