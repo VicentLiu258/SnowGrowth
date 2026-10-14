@@ -108,7 +108,6 @@ void main() {
         home: Scaffold(
           body: HomePage(
             onOpenTools: () {},
-            onOpenAbout: () {},
             onOpenTool: (_) {},
             onOpenWebsite: (_) {},
             onOpenToolsWithQuery: (_) {},

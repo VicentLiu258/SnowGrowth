@@ -1,7 +1,7 @@
 name: snow_growth
 description: ICIA - Brand portal and utility tools for brokers, fintech and asset managers.
 publish_to: 'none'
-version: 1.1.1+9
+version: 1.2.0+10
 
 environment:
   sdk: ^3.7.2
@@ -42,6 +42,7 @@ flutter:
     - assets/hero.webp
     - assets/hero-illustration.webp
     - assets/case.webp
+    - assets/bonus_guide.jpg
     - assets/icon_whatsapp.svg
     - assets/icon_telegram.svg
     - assets/icon_salesmartly.svg

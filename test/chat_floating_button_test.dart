@@ -124,7 +124,7 @@ void main() {
   });
 
   group('MainScaffold bottom navigation', () {
-    testWidgets('shows 5-tab bottom nav with In-app Chat center on mobile', (
+    testWidgets('shows 5-tab bottom nav with WhatsApp center on mobile', (
       tester,
     ) async {
       tester.view.physicalSize = const Size(600, 900);
@@ -135,14 +135,23 @@ void main() {
       });
 
       await tester.pumpWidget(const MaterialApp(home: MainScaffold()));
-      await tester.pumpAndSettle();
+      await tester.pump(); // post-frame restore
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Dismiss welcome modal so bottom nav assertions are unobstructed.
+      final maybeLater = find.text(AppStrings.maybeLater);
+      if (maybeLater.evaluate().isNotEmpty) {
+        await tester.tap(maybeLater);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
 
       // Legacy FAB removed — support lives in header / nav ball.
       expect(find.byType(ChatFloatingButton), findsNothing);
 
       expect(find.text(AppStrings.home), findsWidgets);
       expect(find.text(AppStrings.tools), findsWidgets);
-      expect(find.text(AppStrings.inAppChat), findsWidgets);
+      expect(find.text(AppStrings.whatsapp), findsWidgets);
       expect(find.text(AppStrings.about), findsWidgets);
       expect(find.text(AppStrings.settings), findsWidgets);
     });
@@ -158,7 +167,15 @@ void main() {
       });
 
       await tester.pumpWidget(const MaterialApp(home: MainScaffold()));
-      await tester.pumpAndSettle();
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
+      await tester.pump(const Duration(milliseconds: 500));
+
+      final maybeLater = find.text(AppStrings.maybeLater);
+      if (maybeLater.evaluate().isNotEmpty) {
+        await tester.tap(maybeLater);
+        await tester.pump(const Duration(milliseconds: 300));
+      }
 
       expect(find.byType(ChatFloatingButton), findsNothing);
       // Sidebar shows Settings instead of bottom nav ball layout.

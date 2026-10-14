@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
-import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 

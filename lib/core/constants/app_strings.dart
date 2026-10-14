@@ -13,6 +13,15 @@ class AppStrings {
   static const String requestStrategyConsultation =
       'Request a Strategy Consultation';
   static const String requestGrowthAudit = requestStrategyConsultation;
+  static const String tapToClaimBonus = 'Tap to claim your Bonus';
+  static const String welcomeOffer = 'Welcome Offer';
+  static const String welcomeTitlePrefix = 'Start a chat to receive your ';
+  static const String welcomeTitleAccent = 'bonus!';
+  static const String welcomeSubtitle =
+      'Connect with an institutional strategist and claim exclusive tier benefits.';
+  static const String maybeLater = 'Maybe later';
+  static const String instantSupport = 'Instant Support';
+  static const String liveSupport = 'Live Support';
   static const String tools = 'Tools';
   static const String seeAll = 'See all';
   static const String solutions = 'Solutions';

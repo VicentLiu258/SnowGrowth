@@ -15,10 +15,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 2500));
     await tester.pump(const Duration(milliseconds: 400));
     await tester.pump(const Duration(seconds: 3));
+    await tester.pump(const Duration(milliseconds: 500));
 
-    expect(find.textContaining(AppStrings.heroTitle), findsOneWidget);
+    // Welcome modal appears on every A-side launch.
+    expect(find.text(AppStrings.welcomeOffer), findsOneWidget);
+    expect(find.text(AppStrings.maybeLater), findsOneWidget);
+
+    await tester.ensureVisible(find.text(AppStrings.maybeLater));
+    await tester.tap(find.text(AppStrings.maybeLater));
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.text(AppStrings.tapToClaimBonus), findsOneWidget);
     expect(find.text(AppStrings.tools), findsWidgets);
-    expect(find.text(AppStrings.inAppChat), findsWidgets);
+    expect(find.text(AppStrings.whatsapp), findsWidgets);
     expect(find.text(AppStrings.settings), findsOneWidget);
   });
 }

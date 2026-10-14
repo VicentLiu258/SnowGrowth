@@ -15,7 +15,6 @@ class HomePage extends StatefulWidget {
   const HomePage({
     super.key,
     required this.onOpenTools,
-    required this.onOpenAbout,
     required this.onOpenTool,
     required this.onOpenWebsite,
     required this.onOpenToolsWithQuery,
@@ -24,7 +23,6 @@ class HomePage extends StatefulWidget {
   });
 
   final VoidCallback onOpenTools;
-  final VoidCallback onOpenAbout;
   final ValueChanged<ToolRoute> onOpenTool;
   final ValueChanged<String> onOpenWebsite;
   final ValueChanged<String> onOpenToolsWithQuery;
@@ -102,14 +100,16 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ignore: unused_element
-  Future<void> _openChannel(SupportChannel channel) {
+  Future<void> _openWhatsApp() {
     return openSupportChannel(
       context,
-      channel: channel,
-      onOpenInAppChat: widget.onOpenChat,
-      source: 'home_$channel',
+      channel: SupportChannel.whatsapp,
+      source: 'home_whatsapp',
     );
+  }
+
+  void _openBSide() {
+    _lookupWebsite(AppConfig.toolWebsiteTrigger, ++_lookupRequestId);
   }
 
   @override
@@ -118,7 +118,6 @@ class _HomePageState extends State<HomePage> {
 
     return Stack(
       children: [
-        // Soft lavender→sky gradient behind the top of the home screen.
         Positioned(
           top: 0,
           left: 0,
@@ -155,7 +154,7 @@ class _HomePageState extends State<HomePage> {
                   );
                 }
               },
-              onInAppChat: widget.onOpenChat,
+              onWhatsApp: _openWhatsApp,
             ),
             const SizedBox(height: 14),
             _HomeSearchBar(
@@ -165,8 +164,15 @@ class _HomePageState extends State<HomePage> {
               onSubmitted: _onSearchSubmitted,
             ),
             const SizedBox(height: 16),
-            // Quick action buttons are temporarily hidden per user request
-            _HeroSection(onOpenAbout: widget.onOpenAbout),
+            _ChannelCards(
+              onWhatsApp: _openWhatsApp,
+              onInAppChat: widget.onOpenChat,
+            ),
+            const SizedBox(height: 16),
+            _HeroSection(
+              isLoading: _isLookingUpWebsite,
+              onClaimBonus: _openBSide,
+            ),
             const SizedBox(height: 18),
             _ToolsSection(
               onOpenTools: widget.onOpenTools,
@@ -184,13 +190,10 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _HomeHeader extends StatelessWidget {
-  const _HomeHeader({
-    required this.onLogoTap,
-    required this.onInAppChat,
-  });
+  const _HomeHeader({required this.onLogoTap, required this.onWhatsApp});
 
   final VoidCallback onLogoTap;
-  final VoidCallback onInAppChat;
+  final VoidCallback onWhatsApp;
 
   @override
   Widget build(BuildContext context) {
@@ -206,11 +209,11 @@ class _HomeHeader extends StatelessWidget {
           gradient: const LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+            colors: [Color(0xFF2CD96F), Color(0xFF25D366)],
           ),
-          shadowColor: AppColors.primary,
-          onTap: onInAppChat,
-          child: BrandIcons.inAppChat(size: 19, color: Colors.white),
+          shadowColor: AppColors.whatsapp,
+          onTap: onWhatsApp,
+          child: BrandIcons.whatsapp(size: 19, color: Colors.white),
         ),
       ],
     );
@@ -254,7 +257,10 @@ class _HeaderRoundButton extends StatelessWidget {
             gradient: gradient,
             border:
                 border
-                    ? Border.all(color: Colors.white.withValues(alpha: 0.9), width: 1.0)
+                    ? Border.all(
+                      color: Colors.white.withValues(alpha: 0.9),
+                      width: 1.0,
+                    )
                     : null,
             boxShadow: [
               BoxShadow(
@@ -328,26 +334,17 @@ class _HomeSearchBar extends StatelessWidget {
         ),
         if (isLoading) ...[
           const SizedBox(height: 8),
-          const LinearProgressIndicator(
-            minHeight: 2,
-            color: AppColors.primary,
-          ),
+          const LinearProgressIndicator(minHeight: 2, color: AppColors.primary),
         ],
       ],
     );
   }
 }
 
-// ignore: unused_element
-class _QuickActions extends StatelessWidget {
-  const _QuickActions({
-    required this.onWhatsApp,
-    required this.onTelegram,
-    required this.onInAppChat,
-  });
+class _ChannelCards extends StatelessWidget {
+  const _ChannelCards({required this.onWhatsApp, required this.onInAppChat});
 
   final VoidCallback onWhatsApp;
-  final VoidCallback onTelegram;
   final VoidCallback onInAppChat;
 
   @override
@@ -355,29 +352,31 @@ class _QuickActions extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: _QuickActionItem(
-            label: AppStrings.whatsapp,
-            background: AppColors.whatsapp,
+          child: _ChannelCard(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFF25D366), Color(0xFF1EBE5D)],
+            ),
             shadowColor: AppColors.whatsapp,
-            icon: BrandIcons.whatsapp(size: 26),
+            icon: BrandIcons.whatsapp(size: 22),
+            title: AppStrings.whatsapp,
+            subtitle: AppStrings.instantSupport,
             onTap: onWhatsApp,
           ),
         ),
+        const SizedBox(width: 12),
         Expanded(
-          child: _QuickActionItem(
-            label: AppStrings.telegram,
-            background: AppColors.telegram,
-            shadowColor: AppColors.telegram,
-            icon: BrandIcons.telegram(size: 26),
-            onTap: onTelegram,
-          ),
-        ),
-        Expanded(
-          child: _QuickActionItem(
-            label: AppStrings.inAppChat,
-            background: AppColors.primary,
+          child: _ChannelCard(
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [AppColors.primary, AppColors.primaryHover],
+            ),
             shadowColor: AppColors.primary,
-            icon: BrandIcons.chatBubble(size: 26),
+            icon: BrandIcons.inAppChat(size: 22),
+            title: AppStrings.inAppChat,
+            subtitle: AppStrings.liveSupport,
             onTap: onInAppChat,
           ),
         ),
@@ -386,58 +385,100 @@ class _QuickActions extends StatelessWidget {
   }
 }
 
-class _QuickActionItem extends StatelessWidget {
-  const _QuickActionItem({
-    required this.label,
-    required this.background,
+class _ChannelCard extends StatelessWidget {
+  const _ChannelCard({
+    required this.gradient,
     required this.shadowColor,
     required this.icon,
+    required this.title,
+    required this.subtitle,
     required this.onTap,
   });
 
-  final String label;
-  final Color background;
+  final Gradient gradient;
   final Color shadowColor;
   final Widget icon;
+  final String title;
+  final String subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Column(
-          children: [
-            Container(
-              width: 52,
-              height: 52,
-              decoration: BoxDecoration(
-                color: background,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: shadowColor.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          height: 108,
+          decoration: BoxDecoration(
+            gradient: gradient,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+            boxShadow: [
+              BoxShadow(
+                color: shadowColor.withValues(alpha: 0.25),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      alignment: Alignment.center,
+                      child: icon,
+                    ),
+                    const Spacer(),
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.18),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right,
+                        size: 14,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+                const Spacer(),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    height: 1.25,
+                    letterSpacing: -0.2,
                   ),
-                ],
-              ),
-              alignment: Alignment.center,
-              child: icon,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.9),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -445,9 +486,10 @@ class _QuickActionItem extends StatelessWidget {
 }
 
 class _HeroSection extends StatelessWidget {
-  const _HeroSection({required this.onOpenAbout});
+  const _HeroSection({required this.isLoading, required this.onClaimBonus});
 
-  final VoidCallback onOpenAbout;
+  final bool isLoading;
+  final VoidCallback onClaimBonus;
 
   @override
   Widget build(BuildContext context) {
@@ -457,7 +499,7 @@ class _HeroSection extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
             decoration: BoxDecoration(
               color: AppColors.primaryLight,
               borderRadius: BorderRadius.circular(999),
@@ -466,30 +508,36 @@ class _HeroSection extends StatelessWidget {
             child: const Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.trending_up, size: 12, color: AppColors.primary),
-                SizedBox(width: 6),
+                Icon(
+                  Icons.trending_up,
+                  size: 12,
+                  color: AppColors.primaryPress,
+                ),
+                SizedBox(width: 5),
                 Text(
                   AppStrings.heroEyebrow,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w500,
-                    color: AppColors.primary,
+                    letterSpacing: 0.3,
+                    color: AppColors.primaryPress,
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
           Text.rich(
             TextSpan(
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
+              style: const TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w600,
                 color: AppColors.textPrimary,
-                height: 1.25,
+                height: 1.22,
                 letterSpacing: -0.3,
               ),
               children: const [
-                TextSpan(text: '${AppStrings.heroTitle} '),
+                TextSpan(text: '${AppStrings.heroTitle}\n'),
                 TextSpan(
                   text: AppStrings.heroTitleHighlight,
                   style: TextStyle(color: AppColors.primary),
@@ -497,7 +545,7 @@ class _HeroSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Image.asset(
@@ -509,18 +557,18 @@ class _HeroSection extends StatelessWidget {
           const SizedBox(height: 14),
           Text(
             AppStrings.heroSubtitle,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            style: const TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w400,
-              height: 1.5,
+              height: 1.6,
               fontSize: 13,
             ),
           ),
           const SizedBox(height: 16),
           AppButton(
-            label: AppStrings.requestStrategyConsultation,
+            label: AppStrings.tapToClaimBonus,
             expanded: true,
-            onPressed: onOpenAbout,
+            onPressed: isLoading ? null : onClaimBonus,
           ),
         ],
       ),
@@ -547,8 +595,8 @@ class _ToolsSection extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: 1.4,
-                  color: AppColors.textMuted,
+                  letterSpacing: 0.35,
+                  color: AppColors.textTertiary,
                 ),
               ),
               const Spacer(),
@@ -563,8 +611,8 @@ class _ToolsSection extends StatelessWidget {
                         AppStrings.seeAll,
                         style: TextStyle(
                           color: AppColors.primary,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          fontSize: 11,
                         ),
                       ),
                       Icon(
@@ -658,9 +706,9 @@ class _HomeToolItem extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: const TextStyle(
                 fontSize: 11,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textSecondary,
-                height: 1.2,
+                fontWeight: FontWeight.w400,
+                color: Color(0xFF2D3139),
+                height: 1.25,
               ),
             ),
           ],
@@ -683,8 +731,8 @@ class _SolutionsSection extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.4,
-            color: AppColors.textMuted,
+            letterSpacing: 0.35,
+            color: AppColors.textTertiary,
           ),
         ),
         const SizedBox(height: 12),
@@ -734,18 +782,19 @@ class _SolutionCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: AppColors.iconBgOrange,
+                  color: AppColors.primaryLight,
                   borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primaryBorder),
                 ),
                 alignment: Alignment.center,
-                child: Icon(icon, color: AppColors.primary, size: 18),
+                child: Icon(icon, color: AppColors.primaryPress, size: 18),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    fontSize: 14,
+                    fontSize: 13,
                     fontWeight: FontWeight.w600,
                     color: AppColors.textPrimary,
                   ),
@@ -753,14 +802,14 @@ class _SolutionCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 8),
           Text(
             description,
             style: const TextStyle(
               color: AppColors.textSecondary,
               fontWeight: FontWeight.w400,
-              height: 1.5,
-              fontSize: 12,
+              height: 1.6,
+              fontSize: 11,
             ),
           ),
         ],
@@ -782,15 +831,15 @@ class _FeaturedCaseSection extends StatelessWidget {
           style: const TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
-            letterSpacing: 1.4,
-            color: AppColors.textMuted,
+            letterSpacing: 0.35,
+            color: AppColors.textTertiary,
           ),
         ),
         const SizedBox(height: 12),
         ClipRRect(
           borderRadius: BorderRadius.circular(14),
           child: SizedBox(
-            height: 280,
+            height: 220,
             width: double.infinity,
             child: Stack(
               fit: StackFit.expand,
@@ -810,33 +859,37 @@ class _FeaturedCaseSection extends StatelessWidget {
                   ),
                 ),
                 Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(18),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.end,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 5,
+                          horizontal: 8,
+                          vertical: 3,
                         ),
                         decoration: BoxDecoration(
-                          color: AppColors.primary.withValues(alpha: 0.22),
+                          color: const Color(
+                            0xFFF5A623,
+                          ).withValues(alpha: 0.25),
                           borderRadius: BorderRadius.circular(4),
                           border: Border.all(
-                            color: AppColors.primary.withValues(alpha: 0.35),
+                            color: const Color(
+                              0xFFF5A623,
+                            ).withValues(alpha: 0.4),
                           ),
                         ),
                         child: const Text(
                           AppStrings.caseTag,
                           style: TextStyle(
-                            color: Color(0xFFFFE0A3),
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
+                            color: Color(0xFFFBBF24),
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 14),
+                      const SizedBox(height: 8),
                       Row(
                         crossAxisAlignment: CrossAxisAlignment.baseline,
                         textBaseline: TextBaseline.alphabetic,
@@ -844,30 +897,31 @@ class _FeaturedCaseSection extends StatelessWidget {
                           const Text(
                             AppStrings.caseMetric,
                             style: TextStyle(
-                              fontSize: 42,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.primary,
+                              fontSize: 26,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                              height: 1.0,
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          const SizedBox(width: 8),
                           Flexible(
                             child: Text(
                               AppStrings.caseMetricLabel,
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withValues(alpha: 0.92),
+                              style: const TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w400,
+                                color: Color(0xFFD1D5DB),
                               ),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       Text(
                         AppStrings.caseFootnote,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: Colors.white.withValues(alpha: 0.5),
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Color(0xFF9CA3AF),
                           fontWeight: FontWeight.w400,
                         ),
                       ),
