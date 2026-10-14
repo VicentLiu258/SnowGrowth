@@ -33,3 +33,4 @@ doc/api/
 # Android release signing (never commit)
 android/key.properties
 android/keystore/
+/release/

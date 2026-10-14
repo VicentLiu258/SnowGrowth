@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
+import 'package:snow_growth/core/services/salesmartly_channel_service.dart';
+import 'package:snow_growth/features/chat/presentation/chat_page.dart';
 import 'package:snow_growth/features/navigation/presentation/main_scaffold.dart';
 
 class SplashView extends StatelessWidget {
@@ -45,6 +47,8 @@ class _SplashPageState extends State<SplashPage>
   @override
   void initState() {
     super.initState();
+    SalesmartlyChannelService.prefetch();
+    ChatPreloadService.instance.ensureInitialized();
     _fadeController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 450),

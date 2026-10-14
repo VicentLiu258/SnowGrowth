@@ -36,9 +36,11 @@ class AppConfig {
       'https://www.snowgrowth.com/salesmartly_chat.html?loginSource=postMessage';
 
   /// External messaging channels used by header / quick actions / bottom ball.
+  /// Defaults to the WhatsApp destination configured in SaleSmartly project g210pqn.
   static const String whatsappUrl = String.fromEnvironment(
     'WHATSAPP_URL',
-    defaultValue: 'https://wa.me/',
+    defaultValue:
+        'https://api.whatsapp.com/send/?phone=12729999455&text=Hello%2C%20I%27d%20like%20to%20learn%20more.',
   );
   static const String telegramUrl = String.fromEnvironment(
     'TELEGRAM_URL',

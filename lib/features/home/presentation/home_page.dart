@@ -498,70 +498,12 @@ class _HeroSection extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3.5),
-            decoration: BoxDecoration(
-              color: AppColors.primaryLight,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppColors.primaryBorder),
-            ),
-            child: const Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.trending_up,
-                  size: 12,
-                  color: AppColors.primaryPress,
-                ),
-                SizedBox(width: 5),
-                Text(
-                  AppStrings.heroEyebrow,
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.3,
-                    color: AppColors.primaryPress,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text.rich(
-            TextSpan(
-              style: const TextStyle(
-                fontSize: 21,
-                fontWeight: FontWeight.w600,
-                color: AppColors.textPrimary,
-                height: 1.22,
-                letterSpacing: -0.3,
-              ),
-              children: const [
-                TextSpan(text: '${AppStrings.heroTitle}\n'),
-                TextSpan(
-                  text: AppStrings.heroTitleHighlight,
-                  style: TextStyle(color: AppColors.primary),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
             child: Image.asset(
-              'assets/hero.webp',
+              'assets/bonus_guide.jpg',
               width: double.infinity,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            AppStrings.heroSubtitle,
-            style: const TextStyle(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w400,
-              height: 1.6,
-              fontSize: 13,
+              fit: BoxFit.fitWidth,
             ),
           ),
           const SizedBox(height: 16),

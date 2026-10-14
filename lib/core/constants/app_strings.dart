@@ -13,7 +13,7 @@ class AppStrings {
   static const String requestStrategyConsultation =
       'Request a Strategy Consultation';
   static const String requestGrowthAudit = requestStrategyConsultation;
-  static const String tapToClaimBonus = 'Tap to claim your Bonus';
+  static const String tapToClaimBonus = 'Claim Bonus Now!';
   static const String welcomeOffer = 'Welcome Offer';
   static const String welcomeTitlePrefix = 'Start a chat to receive your ';
   static const String welcomeTitleAccent = 'bonus!';

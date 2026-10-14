@@ -5,6 +5,7 @@ import 'package:snow_growth/core/constants/app_config.dart';
 import 'package:snow_growth/core/constants/app_colors.dart';
 import 'package:snow_growth/core/constants/app_strings.dart';
 import 'package:snow_growth/core/deep_link/deep_link_controller.dart';
+import 'package:snow_growth/core/services/salesmartly_channel_service.dart';
 import 'package:snow_growth/core/utils/local_storage.dart';
 import 'package:snow_growth/core/utils/support_launcher.dart';
 import 'package:snow_growth/core/widgets/app_logo.dart';
@@ -20,6 +21,7 @@ import 'package:snow_growth/features/tools/presentation/tip_calculator_page.dart
 import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
 import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
 import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 enum AppTab { home, tools, about, settings }
 
@@ -74,6 +76,7 @@ class _MainScaffoldState extends State<MainScaffold> {
   int _lastHandledDeepLinkVersion = 0;
   String _toolsQuery = '';
   bool _showWelcomeModal = true;
+  bool _isChatSheetOpen = false;
   late final DeepLinkController _deepLinkController;
   bool _ownsDeepLinkController = false;
   late final WebsiteLookupService _websiteLookupService;
@@ -81,6 +84,8 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void initState() {
     super.initState();
+    SalesmartlyChannelService.prefetch();
+    ChatPreloadService.instance.ensureInitialized();
     if (widget.deepLinkController == null) {
       _deepLinkController = DeepLinkController();
       _ownsDeepLinkController = true;
@@ -217,78 +222,87 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   Future<void> _openChat() async {
-    double? chatWindowTop;
+    double? chatWindowTop = ChatPreloadService.instance.lastWindowTop;
     bool chatSheetClosing = false;
-    await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      isDismissible: true,
-      enableDrag: true,
-      constraints: const BoxConstraints(maxWidth: 440),
-      backgroundColor: Colors.white,
-      barrierColor: Colors.black54,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-      ),
-      clipBehavior: Clip.antiAlias,
-      builder: (sheetContext) {
-        void closeChatSheet() {
-          if (chatSheetClosing || !sheetContext.mounted) return;
-          if (ModalRoute.of(sheetContext)?.isCurrent != true) return;
-          chatSheetClosing = true;
-          Navigator.of(sheetContext).pop();
-        }
+    if (mounted) {
+      setState(() => _isChatSheetOpen = true);
+    }
+    try {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        isDismissible: true,
+        enableDrag: true,
+        constraints: const BoxConstraints(maxWidth: 440),
+        backgroundColor: Colors.white,
+        barrierColor: Colors.black54,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+        ),
+        clipBehavior: Clip.antiAlias,
+        builder: (sheetContext) {
+          void closeChatSheet() {
+            if (chatSheetClosing || !sheetContext.mounted) return;
+            if (ModalRoute.of(sheetContext)?.isCurrent != true) return;
+            chatSheetClosing = true;
+            Navigator.of(sheetContext).pop();
+          }
 
-        return StatefulBuilder(
-          builder:
-              (context, setSheetState) => FractionallySizedBox(
-                heightFactor: 1,
-                child: Padding(
-                  padding: EdgeInsets.only(
-                    bottom:
-                        Theme.of(context).platform == TargetPlatform.android
-                            ? MediaQuery.viewInsetsOf(context).bottom
-                            : 0,
-                  ),
-                  child: Stack(
-                    children: [
-                      Positioned.fill(
-                        child: ChatPage(
-                          onChatClosed: closeChatSheet,
-                          onWindowTopChanged: (top) {
-                            if (!chatSheetClosing &&
-                                sheetContext.mounted &&
-                                chatWindowTop != top) {
-                              setSheetState(() => chatWindowTop = top);
-                            }
-                          },
-                        ),
-                      ),
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 180),
-                        curve: Curves.easeOut,
-                        top: (chatWindowTop ?? 0) + 8,
-                        right: 28,
-                        child: Material(
-                          color: Colors.white.withValues(alpha: 0.94),
-                          shape: const CircleBorder(),
-                          elevation: 2,
-                          child: IconButton(
-                            tooltip: AppStrings.closeChat,
-                            onPressed: closeChatSheet,
-                            icon: const Icon(Icons.close, size: 20),
-                            color: AppColors.gray600,
+          return StatefulBuilder(
+            builder:
+                (context, setSheetState) => FractionallySizedBox(
+                  heightFactor: 1,
+                  child: Padding(
+                    padding: EdgeInsets.only(
+                      bottom:
+                          Theme.of(context).platform == TargetPlatform.android
+                              ? MediaQuery.viewInsetsOf(context).bottom
+                              : 0,
+                    ),
+                    child: Stack(
+                      children: [
+                        Positioned.fill(
+                          child: ChatPage(
+                            onChatClosed: closeChatSheet,
+                            onWindowTopChanged: (top) {
+                              if (!chatSheetClosing &&
+                                  sheetContext.mounted &&
+                                  chatWindowTop != top) {
+                                setSheetState(() => chatWindowTop = top);
+                              }
+                            },
                           ),
                         ),
-                      ),
-                    ],
+                        AnimatedPositioned(
+                          duration: const Duration(milliseconds: 180),
+                          curve: Curves.easeOut,
+                          top: (chatWindowTop ?? 0) + 8,
+                          right: 28,
+                          child: Material(
+                            color: Colors.white.withValues(alpha: 0.94),
+                            shape: const CircleBorder(),
+                            elevation: 2,
+                            child: IconButton(
+                              tooltip: AppStrings.closeChat,
+                              onPressed: closeChatSheet,
+                              icon: const Icon(Icons.close, size: 20),
+                              color: AppColors.gray600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isChatSheetOpen = false);
+      }
+    }
   }
 
   void _openTool(ToolRoute tool) {
@@ -434,6 +448,22 @@ class _MainScaffoldState extends State<MainScaffold> {
                     )
                     : null,
           ),
+          if (!_isChatSheetOpen &&
+              _websiteUrl == null &&
+              ChatPreloadService.instance.controllerOrNull != null)
+            Positioned(
+              left: -10000,
+              top: 0,
+              width: 380,
+              height: 680,
+              child: IgnorePointer(
+                child: ExcludeSemantics(
+                  child: WebViewWidget(
+                    controller: ChatPreloadService.instance.controllerOrNull!,
+                  ),
+                ),
+              ),
+            ),
           if (showWelcome)
             Positioned.fill(
               child: WelcomeModal(
