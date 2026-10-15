@@ -55,15 +55,46 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
           catIndex < UnitCategory.values.length) {
         _category = UnitCategory.values[catIndex];
       }
-      _fromUnit = from ?? UnitConverterData.units[_category]!.first;
+      final categoryUnits = UnitConverterData.units[_category]!;
+      _fromUnit =
+          (from != null && categoryUnits.contains(from))
+              ? from
+              : UnitConverterData.defaultFromUnit(_category);
       _toUnit =
-          to ??
-          (UnitConverterData.units[_category]!.length > 1
-              ? UnitConverterData.units[_category]![1]
-              : UnitConverterData.units[_category]!.first);
+          (to != null && categoryUnits.contains(to))
+              ? to
+              : UnitConverterData.defaultToUnit(_category);
       _val1 = v1 ?? '100';
       _val2 = v2 ?? '328.08399';
-      _lastEdited = lastEdit ?? 1;
+      _lastEdited = lastEdit == 2 ? 2 : 1;
+
+      if (_lastEdited == 1) {
+        final parsed = double.tryParse(_val1);
+        _val2 =
+            parsed == null
+                ? ''
+                : _formatValue(
+                  UnitConverterData.convert(
+                    parsed,
+                    _fromUnit,
+                    _toUnit,
+                    _category,
+                  ),
+                );
+      } else {
+        final parsed = double.tryParse(_val2);
+        _val1 =
+            parsed == null
+                ? ''
+                : _formatValue(
+                  UnitConverterData.convert(
+                    parsed,
+                    _toUnit,
+                    _fromUnit,
+                    _category,
+                  ),
+                );
+      }
       _loaded = true;
     });
   }
@@ -118,13 +149,20 @@ class _UnitConverterPageState extends State<UnitConverterPage> {
   }
 
   String _formatValue(double value) {
-    return value.toStringAsFixed(6).replaceAll(RegExp(r'\.?0+$'), '');
+    if (!value.isFinite || value == 0) return '0';
+    final abs = value.abs();
+    if (abs >= 1e-4) {
+      return value.toStringAsFixed(6).replaceFirst(RegExp(r'\.?0+$'), '');
+    }
+    if (abs >= 1e-9) {
+      return value.toStringAsFixed(10).replaceFirst(RegExp(r'\.?0+$'), '');
+    }
+    return value.toStringAsPrecision(6);
   }
 
   void _changeCategory(UnitCategory category) {
-    final units = UnitConverterData.units[category]!;
-    final newFrom = units.first;
-    final newTo = units.length > 1 ? units[1] : units.first;
+    final newFrom = UnitConverterData.defaultFromUnit(category);
+    final newTo = UnitConverterData.defaultToUnit(category);
 
     setState(() {
       _category = category;
@@ -337,6 +375,7 @@ class _UnitField extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         DropdownButtonFormField<String>(
+          key: ValueKey('${label}_$unit'),
           value: unit,
           decoration: const InputDecoration(
             contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),

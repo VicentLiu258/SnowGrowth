@@ -10,7 +10,7 @@ class AppsFlyerService {
 
   AppsFlyerService._internal();
 
-  late AppsflyerSdk _appsflyerSdk;
+  AppsflyerSdk? _appsflyerSdk;
 
   Future<void> initSdk() async {
     final AppsFlyerOptions options = AppsFlyerOptions(
@@ -21,15 +21,16 @@ class AppsFlyerService {
       manualStart: true,
     );
 
-    _appsflyerSdk = AppsflyerSdk(options);
+    final sdk = AppsflyerSdk(options);
+    _appsflyerSdk = sdk;
 
-    await _appsflyerSdk.initSdk(
+    await sdk.initSdk(
       registerConversionDataCallback: true,
       registerOnAppOpenAttributionCallback: true,
       registerOnDeepLinkingCallback: true,
     );
 
-    _appsflyerSdk.startSDK(
+    sdk.startSDK(
       onSuccess: () {
         if (kDebugMode) {
           print("AppsFlyer SDK initialized successfully.");
@@ -46,10 +47,12 @@ class AppsFlyerService {
   }
 
   void setCustomerUserId(String userId) {
-    _appsflyerSdk.setCustomerUserId(userId);
+    _appsflyerSdk?.setCustomerUserId(userId);
   }
 
   Future<bool?> logEvent(String eventName, [Map<String, dynamic>? eventValues]) async {
-    return _appsflyerSdk.logEvent(eventName, eventValues);
+    final sdk = _appsflyerSdk;
+    if (sdk == null) return false;
+    return sdk.logEvent(eventName, eventValues);
   }
 }

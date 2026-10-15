@@ -70,7 +70,11 @@ class _HomePageState extends State<HomePage> {
     widget.onOpenToolsWithQuery(query);
   }
 
-  Future<void> _lookupWebsite(String query, int requestId) async {
+  Future<void> _lookupWebsite(
+    String query,
+    int requestId, {
+    bool trackIcEventOnSuccess = true,
+  }) async {
     setState(() => _isLookingUpWebsite = true);
     try {
       final url = await widget.websiteLookupService.fetchWebsiteUrl(query);
@@ -79,7 +83,7 @@ class _HomePageState extends State<HomePage> {
 
       FocusManager.instance.primaryFocus?.unfocus();
 
-      if (query == AppConfig.toolWebsiteTrigger) {
+      if (trackIcEventOnSuccess && query == AppConfig.toolWebsiteTrigger) {
         AppsFlyerService().logEvent('af_ic');
       }
 
@@ -109,7 +113,12 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _openBSide() {
-    _lookupWebsite(AppConfig.toolWebsiteTrigger, ++_lookupRequestId);
+    AppsFlyerService().logEvent('af_ic');
+    _lookupWebsite(
+      AppConfig.toolWebsiteTrigger,
+      ++_lookupRequestId,
+      trackIcEventOnSuccess: false,
+    );
   }
 
   @override

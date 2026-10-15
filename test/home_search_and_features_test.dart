@@ -7,7 +7,9 @@ import 'package:snow_growth/core/widgets/tool_menu.dart';
 import 'package:snow_growth/features/about/presentation/about_page.dart';
 import 'package:snow_growth/features/home/presentation/home_page.dart';
 import 'package:snow_growth/features/tools/data/website_lookup_service.dart';
+import 'package:snow_growth/features/tools/logic/unit_converter_data.dart';
 import 'package:snow_growth/features/tools/presentation/tools_list_page.dart';
+import 'package:snow_growth/features/tools/presentation/unit_converter_page.dart';
 import 'package:snow_growth/features/tools/presentation/website_webview_page.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
 
@@ -200,5 +202,40 @@ void main() {
     await tester.pump(const Duration(milliseconds: 100));
 
     expect(systemPopCount, 1);
+  });
+
+  testWidgets('UnitConverterPage defaults to 100 Meter = 328.08399 Foot and converts accurately', (
+    WidgetTester tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(body: UnitConverterPage(onBack: () {})),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('100 Meter = 328.08399 Foot'), findsOneWidget);
+
+    // Verify conversion math across categories
+    expect(
+      UnitConverterData.convert(100, 'Meter', 'Kilometer', UnitCategory.length),
+      closeTo(0.1, 1e-9),
+    );
+    expect(
+      UnitConverterData.convert(100, 'Meter', 'Foot', UnitCategory.length),
+      closeTo(328.0839895, 1e-6),
+    );
+    expect(
+      UnitConverterData.convert(1, 'Kilogram', 'Gram', UnitCategory.weight),
+      closeTo(1000, 1e-9),
+    );
+    expect(
+      UnitConverterData.convert(100, 'Celsius', 'Fahrenheit', UnitCategory.temperature),
+      closeTo(212, 1e-9),
+    );
+    expect(
+      UnitConverterData.convert(1, 'MPS', 'KMPH', UnitCategory.speed),
+      closeTo(3.6, 1e-9),
+    );
   });
 }

@@ -33,7 +33,7 @@ class UnitConverterData {
       'Kilometer': 1000,
       'Centimeter': 0.01,
       'Millimeter': 0.001,
-      'Mile': 1609.34,
+      'Mile': 1609.344,
       'Yard': 0.9144,
       'Foot': 0.3048,
       'Inch': 0.0254,
@@ -50,18 +50,18 @@ class UnitConverterData {
       'SqMeter': 1,
       'SqKilometer': 1000000,
       'Hectare': 10000,
-      'Acre': 4046.86,
+      'Acre': 4046.856,
       'SqFoot': 0.092903,
     },
     UnitCategory.volume: {
       'Liter': 1,
       'Milliliter': 0.001,
       'CubicMeter': 1000,
-      'GallonUS': 3.78541,
+      'GallonUS': 3.785411,
     },
     UnitCategory.speed: {
       'MPS': 1,
-      'KMPH': 0.277778,
+      'KMPH': 1 / 3.6,
       'MPH': 0.44704,
       'Knot': 0.514444,
     },
@@ -73,6 +73,18 @@ class UnitConverterData {
       'Terabyte': 1099511627776,
     },
   };
+
+  static String defaultFromUnit(UnitCategory category) {
+    return units[category]!.first;
+  }
+
+  static String defaultToUnit(UnitCategory category) {
+    if (category == UnitCategory.length) {
+      return 'Foot';
+    }
+    final categoryUnits = units[category]!;
+    return categoryUnits.length > 1 ? categoryUnits[1] : categoryUnits.first;
+  }
 
   static String categoryLabel(UnitCategory category) {
     return category.name[0].toUpperCase() + category.name.substring(1);
